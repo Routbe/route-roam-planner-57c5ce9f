@@ -1007,5 +1007,21 @@
   "booking.seal.retry": "Erneut versuchen",
   "booking.seal.otherHost": "Verschlüsselt: Nur der Gastgeber dieser Buchung kann die Angaben des Gastes lesen.",
   "booking.seal.opening": "Gastangaben werden geöffnet…",
-  "booking.seal.unreadable": "Diese Gastangaben konnten auf diesem Gerät nicht geöffnet werden."
+  "booking.seal.unreadable": "Diese Gastangaben konnten auf diesem Gerät nicht geöffnet werden.",
+  "booking.inquiry.heading": "Anfragen über deine Profilkarte",
+  "booking.inquiry.intro": "Name, E-Mail und Nachricht sind für deinen Buchungsschlüssel verschlüsselt und werden nur hier, auf diesem Gerät, geöffnet. ROUT schreibt dem Gast keine E-Mail: Antworte selbst über die Schaltfläche.",
+  "booking.inquiry.empty": "Noch keine Anfragen über das kurze Formular.",
+  "booking.inquiry.opening": "Anfrage wird geöffnet…",
+  "booking.inquiry.locked": "Verschlüsselt. Öffne Studio auf einem Gerät mit deinem Hauptschlüssel, um diese Anfrage zu lesen.",
+  "booking.inquiry.unreadable": "Diese Anfrage lässt sich mit deinem aktuellen Buchungsschlüssel nicht öffnen.",
+  "booking.inquiry.missing": "Die verschlüsselten Angaben dieser Anfrage wurden nicht gefunden.",
+  "booking.inquiry.legacy": "Ältere Anfrage, unverschlüsselt empfangen",
+  "booking.inquiry.accept": "Annehmen",
+  "booking.inquiry.decline": "Ablehnen",
+  "booking.inquiry.reply": "Gast antworten",
+  "booking.inquiry.replySubject": "Deine Terminanfrage für {{date}} um {{time}}",
+  "booking.inquiry.status.pending": "Neu",
+  "booking.inquiry.status.accepted": "Angenommen",
+  "booking.inquiry.status.declined": "Abgelehnt",
+  "booking.inquiry.done": "Gespeichert. ROUT schreibt dem Gast keine E-Mail; antworte selbst, wenn du möchtest."
 }

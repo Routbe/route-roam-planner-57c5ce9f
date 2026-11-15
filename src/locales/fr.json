@@ -2019,6 +2019,11 @@
   "privacy.section.bookings.p1": "Lorsque vous réservez un rendez-vous via la page de réservation d'un membre ROUT, votre nom, votre adresse e-mail, votre note et vos réponses sont chiffrés dans votre navigateur pour la clé de l'hôte. ROUT ne conserve que ce texte chiffré et ne peut pas le lire. Seul l'hôte l'ouvre, sur son propre appareil.",
   "privacy.section.bookings.p2.strong": "Ce que nous traitons :",
   "privacy.section.bookings.p2.text": "l'heure choisie, le type de rendez-vous, votre fuseau horaire, le statut du rendez-vous, le statut du paiement et des données techniques comme votre adresse IP, pour planifier le rendez-vous et sécuriser le service. ROUT ne vous envoie pas d'e-mail de confirmation, car nous ne connaissons pas votre adresse e-mail. Pour un rendez-vous payant, nous ne transmettons aucune adresse e-mail : le service de paiement Stripe la demande lui-même et la traite selon sa propre politique de confidentialité.",
-  "privacy.section.bookings.p3.strong": "Exception :",
-  "privacy.section.bookings.p3.text": "le court formulaire de demande sur une carte de profil envoie encore le nom, l'adresse e-mail et le message sans chiffrement. Nous utilisons ces données pour transmettre la demande à l'hôte et vous envoyer la réponse par e-mail."
+  "privacy.section.bookings.p3.strong": "Court formulaire de demande :",
+  "privacy.section.bookings.p3.text": "le court formulaire de demande sur une carte de profil chiffre lui aussi le nom, l'adresse e-mail et le message dans votre navigateur pour la clé de l'hôte. ROUT conserve ce texte chiffré dans son stockage européen (Scaleway, Paris), ne voit que la date et l'heure souhaitées, et ne vous envoie pas d'e-mail. Les demandes envoyées avant novembre 2026 restent conservées sans chiffrement, telles qu'elles sont arrivées.",
+  "profile.sealedHint": "Votre nom, votre adresse e-mail et votre message sont chiffrés dans votre navigateur. Seul l'hôte peut les lire, pas ROUT.",
+  "profile.sealedSent": "Votre demande a été envoyée chiffrée. ROUT ne vous enverra pas d'e-mail, car nous ne connaissons pas votre adresse : l'hôte lit vos données sur son propre appareil et vous contacte lui-même.",
+  "profile.sealedHostKeyMissing": "Ce profil ne peut pas encore recevoir de demandes chiffrées. Réessayez plus tard.",
+  "profile.sealedUnavailable": "Ce profil n'accepte pas de rendez-vous pour le moment.",
+  "profile.sealedPastDate": "Choisissez une date dans le futur."
 }
