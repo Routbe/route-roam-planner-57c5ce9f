@@ -20,10 +20,6 @@ import {
 
 type Row = Record<string, unknown>;
 
-function siteOrigin(): string {
-  return (process.env["PUBLIC_SITE_URL"] ?? "https://rout.be").replace(/\/$/, "");
-}
-
 /** Signs one action for one request with an expiring HMAC-SHA256 token. */
 export function bookingToken(id: string, action: "accept" | "decline"): string {
   return signBookingToken(bookingSigningSecret(), id, action);
@@ -66,14 +62,6 @@ export async function hostFor(handle: string): Promise<HostRow | null> {
     email: (row["email"] as string | null) ?? null,
     config: parseBookingConfig(String(block["value"] ?? "")),
   };
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 /** Verwerkt de klik op accepteren/weigeren uit de hostmail. */
