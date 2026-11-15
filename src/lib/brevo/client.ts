@@ -150,51 +150,6 @@ export function sendSealedBookingRequestToHost(opts: {
   });
 }
 
-/** Nieuwe boeking → melding naar de host met accept/decline-links. */
-export function sendBookingRequestToHost(opts: {
-  to: string;
-  language?: string | null;
-  guestName: string;
-  guestEmail: string;
-  date: string;
-  time: string;
-  durationMinutes: number;
-  message?: string | null;
-  acceptUrl: string;
-  declineUrl: string;
-}) {
-  return dispatchBrevo("BOOKING_HOST_REQUEST", {
-    to: opts.to,
-    language: opts.language,
-    subject: `Nieuwe afspraakaanvraag van ${opts.guestName}`,
-    replyTo: { email: opts.guestEmail, name: opts.guestName },
-    params: {
-      GUEST_NAME: opts.guestName,
-      GUEST_EMAIL: opts.guestEmail,
-      DATE: opts.date,
-      TIME: opts.time,
-      DURATION: opts.durationMinutes,
-      ACCEPT_URL: opts.acceptUrl,
-      DECLINE_URL: opts.declineUrl,
-    },
-    html: shell(
-      `<p>Je kreeg een nieuwe afspraakaanvraag via je ROUT-profiel.</p>
-       <ul>
-         <li><strong>Naam:</strong> ${escapeHtml(opts.guestName)}</li>
-         <li><strong>E-mail:</strong> ${escapeHtml(opts.guestEmail)}</li>
-         <li><strong>Datum:</strong> ${escapeHtml(opts.date)} om ${escapeHtml(opts.time)}</li>
-         <li><strong>Duur:</strong> ${opts.durationMinutes} min</li>
-       </ul>
-       ${opts.message ? `<p><strong>Bericht:</strong><br>${escapeHtml(opts.message)}</p>` : ""}
-       <p><a href="${opts.acceptUrl}">✅ Aanvaarden</a> &nbsp;·&nbsp;
-          <a href="${opts.declineUrl}">❌ Weigeren</a></p>`,
-    ),
-    text:
-      `Nieuwe afspraakaanvraag van ${opts.guestName} (${opts.guestEmail}) op ` +
-      `${opts.date} ${opts.time}.\nAanvaarden: ${opts.acceptUrl}\nWeigeren: ${opts.declineUrl}`,
-  });
-}
-
 /** Boeking aanvaard → bevestiging naar de gast met .ics-bijlage. */
 export function sendBookingConfirmedToGuest(opts: {
   to: string;
