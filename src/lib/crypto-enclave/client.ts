@@ -11,6 +11,8 @@ import type { RecoveryCeremony } from "./recovery-mpc";
 import type { SignedRoot } from "./smt";
 import type { EpochLink, HostKeyAnchor } from "./forward-secure";
 import { wipeMessage } from "@/lib/crypto/wipe";
+import type { BookingPayload } from "./booking-seal";
+import type { HostBookingKeyDoc } from "@/lib/booking-engine/sealed-booking";
 
 export type { LedgerDraft, SealedForUser, VaultSummary } from "./protocol";
 
@@ -341,6 +343,19 @@ export const enclave = {
         plaintext.fill(0);
       }
     },
+  },
+  /** Host side of sealed guest details (Fase 1). */
+  bookingKey: {
+    /** Creates (existing = null) or checks the host booking key; only the publishable document comes back. */
+    ensure: (userId: string, existing: HostBookingKeyDoc | null) => callEnclave("bookingKey.ensure", { userId, existing }),
+    /** Opens host copies; payloads are short-lived strings, keep them out of caches and logs. */
+    open: (userId: string, doc: HostBookingKeyDoc, items: { payloadId: string; envelope: Uint8Array }[]) =>
+      callEnclave("bookingKey.open", { userId, doc, items: items.map((i) => ({ payloadId: i.payloadId, envelope: i.envelope.slice() })) }),
+  },
+  /** Guest side: seals the booking form for every host key in the worker. */
+  booking: {
+    seal: (hosts: { ref: string; publicKey: Uint8Array }[], payload: BookingPayload) =>
+      callEnclave("booking.seal", { hosts: hosts.map((h) => ({ ref: h.ref, publicKey: h.publicKey.slice() })), payload }),
   },
   hash: {
     sha256Hex: (text: string) => callEnclave("hash.sha256Hex", { text }),
