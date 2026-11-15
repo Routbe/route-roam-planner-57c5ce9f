@@ -703,7 +703,7 @@ Vervangt het externe dossier "Technisch Overdrachtsdossier: ROUT Sovereign Engin
 - **Bewust ongewijzigd:** `profile.bookingSent` ("je krijgt een e-mail") hoort bij het onversleutelde aanvraagformulier en klopt daar nog; de agenda-pijler "Zero-Knowledge PII" in `privacy-pillars.ts` gaat over gekoppelde agenda's; bestaande Trust Center-teksten en safety-pagina's blijven nl/en of nl.
 - **Open:** juridische nalezing van het nieuwe privacy-onderdeel (grondslagen, bewaartermijnen, verwerkers); aanvraagformulier op profielkaarten versleutelen; fr/de voor de overige Trust Center- en safety-teksten; alle open punten uit de bijlage Fase 1 blijven open.
 
-## Bijlage: profielkaart-aanvragen versleuteld en fr/de-pariteit (2026-11-15 16:20 UTC, geen 100%-attestatie)
+## Bijlage: profielkaart-aanvragen versleuteld en fr/de-pariteit (2026-11-15 16:15 UTC, geen 100%-attestatie)
 
 Geen SQL-migratie, Neon niet aangeraakt, `CODE_SCHEMA_LEVEL` blijft `"0277"`.
 
