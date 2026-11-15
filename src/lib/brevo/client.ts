@@ -120,6 +120,36 @@ export function sendAliasLinked(opts: {
   });
 }
 
+/**
+ * Versleutelde aanvraag via het korte formulier → melding zonder gastgegevens.
+ * Geen naam, e-mail, bericht of reply-to: de host leest de aanvraag in Studio.
+ */
+export function sendSealedBookingRequestToHost(opts: {
+  to: string;
+  language?: string | null;
+  date: string;
+  time: string;
+  durationMinutes: number;
+  studioUrl: string;
+}) {
+  return dispatchBrevo("BOOKING_HOST_REQUEST", {
+    to: opts.to,
+    language: opts.language,
+    subject: "Nieuwe versleutelde afspraakaanvraag",
+    params: { DATE: opts.date, TIME: opts.time, DURATION: opts.durationMinutes, STUDIO_URL: opts.studioUrl },
+    html: shell(
+      `<p>Je kreeg een nieuwe afspraakaanvraag via je ROUT-profiel.</p>
+       <ul>
+         <li><strong>Gewenst:</strong> ${escapeHtml(opts.date)} om ${escapeHtml(opts.time)}</li>
+         <li><strong>Duur:</strong> ${opts.durationMinutes} min</li>
+       </ul>
+       <p>Naam, e-mailadres en bericht van de gast zijn in diens browser versleuteld voor jouw boekingssleutel.
+          ROUT kan ze niet lezen en zet ze daarom niet in deze mail.</p>
+       <p><a href="${opts.studioUrl}">Open je boekingen in Studio</a> om de aanvraag te lezen en te aanvaarden of te weigeren.</p>`,
+    ),
+  });
+}
+
 /** Nieuwe boeking → melding naar de host met accept/decline-links. */
 export function sendBookingRequestToHost(opts: {
   to: string;
