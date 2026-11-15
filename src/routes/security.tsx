@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { PillarDetails } from "@/components/PrivacyBadge";
 import { useI18n } from "@/lib/i18n";
 import { PILLAR_IDS, pillar } from "@/lib/privacy-pillars";
+import { securityStatus, type StatusLevel } from "@/lib/security-status";
 
 const TITLE = "Trust Center | ROUT";
 const DESC = "Hoe ROUT gegevens beschermt: lokale versleuteling, standaard OIDC, minimale gegevensdeling en gecontroleerde toegang.";
@@ -54,6 +55,7 @@ function SecurityPage() {
   const rows = nl
     ? [
         ["Agenda-inhoud", "Volledige afspraken worden vaak opgeslagen", "Alleen anonieme vrij/bezet-bitmaps"],
+        ["Gastgegevens bij boeken", "Naam en e-mail leesbaar voor het platform", "Versleuteld in de browser van de gast, alleen de host leest ze"],
         ["Tracking", "Advertentie- en analysetrackers van derden", "Geen trackers van derden"],
         ["Login bij andere apps", "Brede toegang, weinig zicht op scopes", "Expliciete OAuth-scopes per app"],
         ["Donaties", "Geld via de rekening van het platform", "EPC-QR rechtstreeks naar je bank"],
@@ -61,6 +63,7 @@ function SecurityPage() {
       ]
     : [
         ["Calendar content", "Full events are often stored", "Only anonymous free/busy bitmaps"],
+        ["Guest details when booking", "Name and email readable by the platform", "Encrypted in the guest's browser, only the host reads them"],
         ["Tracking", "Third-party ad and analytics trackers", "No third-party trackers"],
         ["Sign-in to other apps", "Broad access, little scope visibility", "Explicit OAuth scopes per app"],
         ["Donations", "Money flows through the platform's account", "EPC QR straight to your bank"],
@@ -80,6 +83,8 @@ function SecurityPage() {
           <PillarDetails p={pillar(id, locale)} nl={nl} />
         </section>
       ))}
+
+      <StatusSection locale={locale} />
 
       <section className="space-y-3">
         <h2 className="font-display text-2xl">{nl ? "Traditionele SaaS vs. ROUT" : "Traditional SaaS vs. ROUT"}</h2>
@@ -123,5 +128,32 @@ function SecurityPage() {
         <a href="/privacy" className="inline-flex pt-2 text-sm font-medium text-primary underline-offset-4 hover:underline">{nl ? "Lees de privacyverklaring →" : "Read the privacy policy →"}</a>
       </section>
     </main>
+  );
+}
+
+const LEVEL_CLASS: Record<StatusLevel, string> = {
+  tested: "border-primary/40 bg-primary/10",
+  building: "border-border bg-muted",
+  open: "border-dashed border-border bg-background",
+};
+
+/** Honest per-item status of booking encryption and cryptography work (src/lib/security-status.ts). */
+function StatusSection({ locale }: { locale: string }) {
+  const s = securityStatus(locale);
+  return (
+    <section id="status" className="scroll-mt-24 space-y-3">
+      <h2 className="font-display text-2xl">{s.heading}</h2>
+      <p className="max-w-2xl text-sm text-muted-foreground">{s.intro}</p>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {s.items.map((item) => (
+          <li key={item.id} id={item.id} className="scroll-mt-24 space-y-2 rounded-2xl border border-border bg-card p-4 text-sm">
+            <span className={`inline-flex rounded-full border px-2.5 py-0.5 font-mono text-[11px] text-foreground ${LEVEL_CLASS[item.level]}`}>{s.levels[item.level]}</span>
+            <p className="font-medium">{item.title}</p>
+            <p className="text-muted-foreground">{item.body}</p>
+            {item.open && <p className="text-muted-foreground"><span className="font-medium text-foreground">{s.openLabel}:</span> {item.open}</p>}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

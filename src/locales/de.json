@@ -992,7 +992,7 @@
   "privacy.section.static.body": "Statische QR-Codes werden vollständig clientseitig erstellt und generiert, innerhalb der lokalen Sandbox deines Browsers. Payload-Inhalte — URLs, vCards, WLAN-Schlüssel, IBAN-Angaben — erreichen niemals die Server von ROUT, werden nie abgefangen und erzeugen keinerlei serverseitige Logs oder Resttelemetrie. Es wird nichts hochgeladen, also gibt es nichts für uns zu speichern, offenzulegen oder zu verlieren.",
   "privacy.section.static.heading": "Statische QR-Codes — absolute Zero-Data-Architektur",
   "privacy.title": "Datenschutzerklärung",
-  "privacy.updated": "Zuletzt aktualisiert: August 2026 · DSGVO/AVG-konform",
+  "privacy.updated": "Zuletzt aktualisiert: November 2026 · DSGVO/AVG-konform",
   "profile.agenda": "Veranstaltungen",
   "profile.anonymousPlaceholder": "Schick mir anonym eine Nachricht oder Frage…",
   "profile.anonymousQuestion": "Anonyme Frage",
@@ -2013,5 +2013,12 @@
   "cardScan.limitedText": "Versuche es in ein paar Minuten erneut.",
   "cardScan.pInvalid": "ungültig",
   "cardScan.invalidTitle": "Nicht echt",
-  "cardScan.invalidText": "Dieser Code ist ungültig. Die Karte könnte gefälscht oder kopiert sein."
+  "cardScan.invalidText": "Dieser Code ist ungültig. Die Karte könnte gefälscht oder kopiert sein.",
+  "privacy.chip.bookings": "Termine",
+  "privacy.section.bookings.heading": "Termine über eine Buchungsseite",
+  "privacy.section.bookings.p1": "Wenn du über die Buchungsseite eines ROUT-Mitglieds einen Termin buchst, werden dein Name, deine E-Mail-Adresse, deine Notiz und deine Antworten in deinem Browser für den Schlüssel des Gastgebers verschlüsselt. ROUT speichert nur diesen verschlüsselten Text und kann ihn nicht lesen. Nur der Gastgeber öffnet ihn, auf seinem eigenen Gerät.",
+  "privacy.section.bookings.p2.strong": "Was wir verarbeiten:",
+  "privacy.section.bookings.p2.text": "die gewählte Zeit, die Terminart, deine Zeitzone, den Terminstatus, den Zahlungsstatus und technische Daten wie deine IP-Adresse, um den Termin zu planen und den Dienst abzusichern. ROUT schickt dir keine Bestätigungs-E-Mail, weil wir deine E-Mail-Adresse nicht kennen. Bei einem bezahlten Termin geben wir keine E-Mail-Adresse weiter: Der Zahlungsdienst Stripe fragt sie selbst ab und verarbeitet sie nach seiner eigenen Datenschutzerklärung.",
+  "privacy.section.bookings.p3.strong": "Ausnahme:",
+  "privacy.section.bookings.p3.text": "Das kurze Anfrageformular auf einer Profilkarte sendet Name, E-Mail-Adresse und Nachricht noch unverschlüsselt. Diese Angaben nutzen wir, um die Anfrage an den Gastgeber zu übermitteln und dir die Antwort per E-Mail zu schicken."
 }

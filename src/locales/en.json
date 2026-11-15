@@ -992,7 +992,7 @@
   "privacy.section.static.body": "Static QR codes are compiled and generated entirely client-side, inside your browser's local sandbox. Payload contents — URLs, vCards, Wi-Fi keys, IBAN strings — never touch ROUT servers, are never intercepted, and generate zero server-side logs or residual telemetry. Nothing is uploaded, so there is nothing for us to store, disclose, or lose.",
   "privacy.section.static.heading": "Static QR codes — absolute zero-data architecture",
   "privacy.title": "Privacy Policy",
-  "privacy.updated": "Last updated: August 2026 · GDPR / AVG compliant",
+  "privacy.updated": "Last updated: November 2026 · GDPR / AVG compliant",
   "profile.agenda": "Events",
   "profile.anonymousPlaceholder": "Send me an anonymous message or question…",
   "profile.anonymousQuestion": "Anonymous question",
@@ -2013,5 +2013,12 @@
   "cardScan.limitedText": "Try again in a few minutes.",
   "cardScan.pInvalid": "invalid",
   "cardScan.invalidTitle": "Not genuine",
-  "cardScan.invalidText": "This code is invalid. The card may be forged or copied."
+  "cardScan.invalidText": "This code is invalid. The card may be forged or copied.",
+  "privacy.chip.bookings": "Bookings",
+  "privacy.section.bookings.heading": "Bookings through a booking page",
+  "privacy.section.bookings.p1": "When you book a meeting through a ROUT member's booking page, your name, email address, note and answers are encrypted in your browser for the host's key. ROUT only stores that encrypted text and cannot read it. Only the host opens it, on their own device.",
+  "privacy.section.bookings.p2.strong": "What we do process:",
+  "privacy.section.bookings.p2.text": "the chosen time, the meeting type, your time zone, the meeting status, the payment status and technical data such as your IP address, to schedule the meeting and keep the service secure. ROUT does not send you a confirmation email, because we do not know your email address. For a paid meeting we pass on no email address: the payment service Stripe asks for it itself and processes it under its own privacy policy.",
+  "privacy.section.bookings.p3.strong": "Exception:",
+  "privacy.section.bookings.p3.text": "the short request form on a profile card still sends name, email address and message unencrypted. We use those details to deliver the request to the host and to email you the answer."
 }

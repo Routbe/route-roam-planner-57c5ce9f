@@ -265,3 +265,13 @@
 - [ ] Gastkopie (bkg, beheerlink-fragment) leesbaar maken voor de gast — vraagt een EXPAND-migratie: `rout_booking_guest_view` geeft intake_answers niet terug
 - [ ] Limiet per gast werkt niet meer voor versleutelde boekingen (willekeurig pseudoniem per boeking) — wacht op BBS+-gastbewijzen of eigenaarsbesluit
 - [ ] Hostsleutel aan hardware-passkey (PRF) binden — wacht op de hardware-PRF-test
+
+## Documentatie- en publieke tekst-audit (2026-11-15, geen Neon-wijziging)
+- [x] /info/bookings in nl/en/fr/de: versleutelde gastgegevens, geen bevestigingsmail, limiet per bezoeker, grenzen
+- [x] Privacyverklaring: nieuw onderdeel "Afspraken via een boekingspagina" in nl/en/fr/de
+- [x] Trust Center (/security): statusoverzicht boekingen en cryptografie in nl/en/fr/de + test
+- [x] Studio: uitleg bij "Max. per gast" vermeldt dat de limiet niet geldt voor versleutelde boekingen (nl/en/fr/de)
+- [x] README, ENVIRONMENT.md, safety/cryptography (alleen nl, zoals de pagina al bestond) bijgewerkt
+- [ ] Privacyverklaring juridisch laten nalezen (grondslagen, bewaartermijnen, verwerkers) — eigenaar
+- [ ] Kort aanvraagformulier op profielkaarten versleutelen (nu nog onversleuteld) — wacht op GO eigenaar
+- [ ] Trust Center-teksten buiten het nieuwe overzicht en de safety-pagina's bestaan alleen in nl/en of nl — vertaling naar fr/de wacht op GO eigenaar
