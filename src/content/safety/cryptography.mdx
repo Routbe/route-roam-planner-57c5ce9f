@@ -1,8 +1,8 @@
 ---
 title: "Cryptografie"
-description: "Browserkeys, RSA-OAEP en AES-GCM; eerlijke grenzen van post-quantum readiness."
+description: "Browserkeys, RSA-OAEP en AES-GCM, versleutelde boekingen met ML-KEM-1024 + X25519, en eerlijke grenzen van post-quantum readiness."
 category: "safety"
-last_updated: "2026-11-01"
+last_updated: "2026-11-15"
 ai_ready: true
 ---
 
@@ -18,6 +18,12 @@ Sleutels worden in de browser gegenereerd. RSA-OAEP met 3072-bit sleutels besche
 
 <Callout type="warning" title="Geen blind loginprotocol">Een OIDC-redirect en tokenuitgifte blijven server-side zichtbaar. Opslagversleuteling maakt ROUT niet blind voor het verkeer dat het verwerkt.</Callout>
 
+## Versleutelde boekingen
+
+Bij een boeking via een boekingspagina versleutelt de browser van de gast naam, e-mail, notitie en antwoorden in de crypto-worker als RVE1-envelop voor de boekingssleutel van elke host: ML-KEM-1024 + X25519, opgevuld tot 1, 4 of 16 KiB en gebonden aan host en boeking. De server controleert alleen de vorm van de envelop, bewaart de ciphertext en weigert verzoeken met onversleutelde gastvelden. Het geheime deel van de hostsleutel staat AES-256-GCM-verzegeld onder de hoofdsleutel van de host in de Scaleway-clientbucket en wordt alleen in de worker op het toestel van de host geopend.
+
+<Callout type="warning" title="Grenzen">De server levert de openbare hostsleutel; een kwaadwillige server kan een andere sleutel serveren, zoals bij elke versleuteling in een webbrowser. Tijdstip, afspraaktype, tijdzone en status blijven leesbaar. Het korte aanvraagformulier op profielkaarten is nog onversleuteld. Een live boeking met deze versleuteling is nog niet bevestigd.</Callout>
+
 ## Sleutelverlies en herstel
 
 Sleutelverlies mag het ROUT-account niet blokkeren. Oude ledgerinhoud kan zonder bruikbare key onleesbaar blijven. Echte WebAuthn PRF- en threshold-recoverywerking zijn niet live bewezen; deze tekst belooft geen voltooid herstelprotocol.
@@ -29,3 +35,5 @@ De voorbereidende auditkop-migratie koppelt een AFTER INSERT-trigger aan `users.
 ## Post-quantum readiness
 
 JWKS behoudt ES256. Hybride/post-quantum signing is momenteel uitgeschakeld. RSA-OAEP en ES256 zijn geen post-quantumveilige algoritmen; modulariteit is geen cryptografische garantie. Blinded tokens blijven een apart toekomstig SDK-traject.
+
+Wel hybride (klassiek + post-kwantum) is de versleuteling van gastgegevens bij boekingen (ML-KEM-1024 + X25519). Een post-kwantum ratchet en een Wesolowski-VDF bestaan als geteste bouwstenen in de rekenmodule, maar worden nog nergens in de app gebruikt. Timingmetingen (dudect, 1.000.000 metingen per bewerking) bleven voor X25519, ML-KEM-1024, vergelijken in constante tijd, PRF naar HKDF en AES-256-GCM onder |t| = 4,5; OPAQUE, de ratchet en de VDF zijn nog niet gemeten. Een geslaagde meting is statistisch bewijs, geen garantie.
