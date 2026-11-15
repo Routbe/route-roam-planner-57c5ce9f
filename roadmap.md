@@ -254,3 +254,10 @@
 - [ ] Scaleway prekey-bundle succesvol ophalen — alle 11 @handles uit de publieke profielsitemap antwoorden 404 not_available; geen succesvolle object-read bevestigd
 - [ ] Gepubliceerd ZKP-anker ophalen en verifiëren — dezelfde 11 @handles antwoorden 404 no_anchor; geen gepubliceerd anker beschikbaar voor verificatie
 - [x] Live bevindingen vastgelegd in de overdrachtsbijlage; 100% completion niet bevestigd
+
+## Zero-trust hardening (2026-11-15, zonder Neon-wijziging)
+- [x] Server-guard-test voor alle serverfuncties (93 bewust openbaar, geen ongeguarde ingelogde functie)
+- [x] `/dev/emails` en `sendTestEmail` dicht buiten development
+- [x] ENVIRONMENT.md aangevuld; `vercel.json` + `build:vercel` toegevoegd (Vercel-build niet bevestigd)
+- [x] Migratiedocumentatie 0265/0277-rollback gecorrigeerd zonder `db/0277` te wijzigen
+- [ ] Gastnaam/e-mail versleuteld bij boeken: wacht op besluit host-boekingssleutel (opslagplek) en vervanging mail/Stripe

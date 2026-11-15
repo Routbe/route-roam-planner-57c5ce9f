@@ -107,11 +107,7 @@ use the editor.
 - Phase B–G security rules live in src/lib/booking-engine/AGENTS.md and bind every booking, recovery and crypto change. Why: the owner's hard requirements stay in one scoped place.
 
 ## Server function guards
-- Every createServerFn export uses requireAuth, requireDeveloperAccess or optionalAuth, unless listed in PUBLIC_SERVER_FNS in src/test/server-fn-auth-guard.test.ts; adding a public function means adding it there with review. Why: the _authenticated layout only gates the UI, the RPC endpoint stays callable.
-- /dev/* preview routes and their server functions refuse outside development via import.meta.env.DEV, never process.env.NODE_ENV. Why: NODE_ENV is not reliable in the edge runtime.
-
-## Deployment headers
-- Security headers come only from src/lib/security-headers.ts; vercel.json adds none. Why: a second CSP or frame header is intersected by browsers and breaks route-specific policies.
+- createServerFn exports need requireAuth/requireDeveloperAccess/optionalAuth or an entry in PUBLIC_SERVER_FNS (src/test/server-fn-auth-guard.test.ts). Why: route gates only hide UI.
 
 <!-- AGENT-MEMORY:BEGIN -->
 ## One-file migration rollout
