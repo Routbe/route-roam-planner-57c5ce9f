@@ -73,6 +73,8 @@ export const sendTestEmail = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
+    // Production builds refuse before any lookup: the preview page itself is dev-only.
+    if (!import.meta.env.DEV) throw Object.assign(new Error("Not Found"), { statusCode: 404 });
     const { assertAdminRole } = await import("./admin.server");
     await assertAdminRole(context.userId);
 
