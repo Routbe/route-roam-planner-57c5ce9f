@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/middleware";
-import { availabilityRule, bookingRequest, caldavCredentials, eventTypeInput, icsFeedCredentials, PLAINTEXT_GUEST_FIELDS } from "./types";
+import { availabilityRule, caldavCredentials, eventTypeInput, icsFeedCredentials, parseBookingRequest } from "./types";
 
 const uuid = z.string().uuid();
 const fail = (e: unknown) => {
@@ -75,14 +75,6 @@ export const releaseBookingSlot = createServerFn({ method: "POST" })
       return { ok: false };
     }
   });
-
-/** Fase 1: a request carrying any plaintext guest field is refused before anything else runs. */
-export function parseBookingRequest(input: unknown) {
-  if (typeof input === "object" && input !== null && PLAINTEXT_GUEST_FIELDS.some((k) => Object.hasOwn(input, k))) {
-    throw new Error("plaintext_refused");
-  }
-  return bookingRequest.parse(input);
-}
 
 /** Public: the hosts' booking public keys for one event type (references only, never user ids). */
 export const getHostBookingKeys = createServerFn({ method: "GET" })

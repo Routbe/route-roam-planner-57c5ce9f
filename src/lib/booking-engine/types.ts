@@ -124,6 +124,14 @@ export const bookingRequest = z
   .strict();
 export type BookingRequest = z.infer<typeof bookingRequest>;
 
+/** Fase 1: a request carrying any plaintext guest field is refused before anything else runs. */
+export function parseBookingRequest(input: unknown): BookingRequest {
+  if (typeof input === "object" && input !== null && PLAINTEXT_GUEST_FIELDS.some((k) => Object.hasOwn(input, k))) {
+    throw new Error("plaintext_refused");
+  }
+  return bookingRequest.parse(input);
+}
+
 export type BookingOutcome =
   | { ok: true; bookingIds: string[]; bookingToken: string | null; status: z.infer<typeof bookingStatus>; hostUserIds: string[]; checkoutUrl: string | null }
   | { ok: false; reason: "slot_taken" | "outside_availability" | "too_soon" | "too_far" | "inactive" | "payment_unavailable" | "invalid_intake" | "guest_limit" | "host_key_missing" };
