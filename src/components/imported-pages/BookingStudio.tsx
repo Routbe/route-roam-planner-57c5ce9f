@@ -16,6 +16,7 @@ import {
   saveBookingEventType, setBookingEventTypeActive, syncBookingCalendar, addAvailabilityException, removeAvailabilityException,
 } from "@/lib/booking-engine/booking.functions";
 import type { IntakeField } from "@/lib/booking-engine/intake";
+import { BookingKeyBanner, SealedGuestDetails, useHostBookingKey, useOpenedGuestDetails } from "@/components/booking/SealedBookingDetails";
 
 type Studio = Extract<Awaited<ReturnType<typeof getBookingStudio>>, { ready: true }>;
 type EventType = Studio["eventTypes"][number];
@@ -113,10 +114,14 @@ function Requests({ data }: { data: Studio }) {
     else toast.error(t("booking.err.generic"));
     await qc.invalidateQueries({ queryKey: QK });
   };
-  if (data.bookings.length === 0) return <Panel><p className="text-sm text-muted-foreground">{t("booking.empty.requests")}</p></Panel>;
+  const key = useHostBookingKey(data.userId);
+  const sealedOpen = useOpenedGuestDetails(data.userId, key.state, data.bookings);
+  const banner = <BookingKeyBanner state={key.state} onRetry={key.retry} onReplace={key.replace} />;
+  if (data.bookings.length === 0) return <div className="space-y-3">{banner}<Panel><p className="text-sm text-muted-foreground">{t("booking.empty.requests")}</p></Panel></div>;
   const fmt = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
   return (
     <div className="space-y-3">
+      {banner}
       {data.bookings.map((b) => (
         <Panel key={b.id}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -126,8 +131,14 @@ function Requests({ data }: { data: Studio }) {
                 <Badge variant={b.status === "requested" ? "default" : "secondary"}>{t(`booking.status.${b.status}`)}</Badge>
               </div>
               <p className="text-sm text-foreground">{fmt.format(new Date(b.startUtc))}</p>
-              <p className="truncate text-sm text-muted-foreground">{b.guestName} · {b.guestEmail} · {b.guestTimezone}</p>
-              {b.guestNote && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{b.guestNote}</p>}
+              {b.sealed ? (
+                <SealedGuestDetails booking={b} userId={data.userId} opened={sealedOpen.opened} loading={sealedOpen.loading} timezone={b.guestTimezone} fields={b.intakeFields} />
+              ) : (
+                <>
+                  <p className="truncate text-sm text-muted-foreground">{b.guestName} · {b.guestEmail} · {b.guestTimezone}</p>
+                  {b.guestNote && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{b.guestNote}</p>}
+                </>
+              )}
               {b.intake.length > 0 && (
                 <dl className="mt-2 grid gap-1 rounded-lg border border-border bg-background p-2 text-sm">
                   {b.intake.map((a) => (
