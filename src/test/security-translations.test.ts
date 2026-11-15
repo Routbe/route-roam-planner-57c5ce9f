@@ -27,7 +27,7 @@ function expectParity(bundles: Record<string, Bundle>, prefix: string) {
 }
 
 describe("Trust Center (/security) in NL, EN, FR and DE", () => {
-  const trust = { nl: trustNl, en: trustEn, fr: trustFr, de: trustDe } as Record<string, Bundle>;
+  const trust = { nl: trustNl, en: trustEn, fr: trustFr, de: trustDe } as unknown as Record<string, Bundle>;
 
   it("every Trust Center text exists in all four languages", () => {
     expectParity(trust, "trust.");
@@ -82,12 +82,12 @@ describe("Cryptography page (/safety/cryptography) in NL, EN, FR and DE", () => 
 
 describe("profile-card request and Studio texts", () => {
   it("visitor-facing texts exist in all four languages", () => {
-    const root = { nl: rootNl, en: rootEn, fr: rootFr, de: rootDe } as Record<string, Bundle>;
+    const root = { nl: rootNl, en: rootEn, fr: rootFr, de: rootDe } as unknown as Record<string, Bundle>;
     expectParity(root, "profile.sealed");
     expectParity(root, "privacy.section.bookings.");
   });
 
   it("host-facing Studio texts exist in all four languages", () => {
-    expectParity({ nl: studioNl, en: studioEn, fr: studioFr, de: studioDe } as Record<string, Bundle>, "booking.inquiry.");
+    expectParity({ nl: studioNl, en: studioEn, fr: studioFr, de: studioDe } as unknown as Record<string, Bundle>, "booking.inquiry.");
   });
 });
