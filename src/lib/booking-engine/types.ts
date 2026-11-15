@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { sealedGuestDetails } from "./sealed-booking";
 import { intakeFields } from "./intake";
 
 /**
@@ -102,23 +103,30 @@ export interface UtcInterval {
   endUtc: Date;
 }
 
-export const bookingRequest = z.object({
-  eventTypeId: z.string().uuid(),
-  startUtc: utcInstant,
-  guestName: z.string().trim().min(1).max(120),
-  guestEmail: z.string().trim().toLowerCase().email().max(254),
-  guestTimezone: ianaZone,
-  guestNote: z.string().max(2000).nullable().default(null),
-  intakeAnswers: z.record(z.string().max(32), z.union([z.string().max(2000), z.boolean()])).nullable().default(null),
-  /** Soft-lock from holdBookingSlot; without it (or expired) the regular rules apply. */
-  holdId: z.string().uuid().nullable().default(null),
-  holdSecret: z.string().regex(/^[a-f0-9]{64}$/).nullable().default(null),
-});
+/** Plaintext guest fields the server refuses outright (Fase 1): they may only arrive sealed. */
+export const PLAINTEXT_GUEST_FIELDS = ["guestName", "guestEmail", "guestNote", "intakeAnswers"] as const;
+
+/**
+ * A booking as the server accepts it: guest name, e-mail, note and intake
+ * answers exist only as RVE1 host copies in `sealed` (sealed-booking.ts).
+ * `.strict()` rejects any extra key, so a plaintext field fails validation.
+ */
+export const bookingRequest = z
+  .object({
+    eventTypeId: z.string().uuid(),
+    startUtc: utcInstant,
+    guestTimezone: ianaZone,
+    sealed: sealedGuestDetails,
+    /** Soft-lock from holdBookingSlot; without it (or expired) the regular rules apply. */
+    holdId: z.string().uuid().nullable().default(null),
+    holdSecret: z.string().regex(/^[a-f0-9]{64}$/).nullable().default(null),
+  })
+  .strict();
 export type BookingRequest = z.infer<typeof bookingRequest>;
 
 export type BookingOutcome =
   | { ok: true; bookingIds: string[]; bookingToken: string | null; status: z.infer<typeof bookingStatus>; hostUserIds: string[]; checkoutUrl: string | null }
-  | { ok: false; reason: "slot_taken" | "outside_availability" | "too_soon" | "too_far" | "inactive" | "payment_unavailable" | "invalid_intake" | "guest_limit" };
+  | { ok: false; reason: "slot_taken" | "outside_availability" | "too_soon" | "too_far" | "inactive" | "payment_unavailable" | "invalid_intake" | "guest_limit" | "host_key_missing" };
 
 /** Zero-knowledge busy block: the ONLY shape a calendar adapter may emit. */
 export interface BusyBlock {
