@@ -93,7 +93,7 @@ The release validator requires only DATABASE_URL and PUBLIC_ORIGIN. The runtime 
 - `SCALEWAY_ENDPOINT` — Scaleway Object Storage.
 - `SCALEWAY_REGION` — Scaleway Object Storage.
 - `SCALEWAY_DEFAULT_BUCKET` — Scaleway Object Storage.
-- `SCALEWAY_CLIENT_BUCKET` — Member profile photos and uploaded media.
+- `SCALEWAY_CLIENT_BUCKET` — Member profile photos and uploaded media, plus per-member key documents: `users/<uid>/prekey-bundle.json` and `users/<uid>/booking-key.json`. Without it no host can publish a booking key, so every booking page refuses new bookings (`host_key_missing`).
 - `SCALEWAY_INTERNAL_BUCKET` — ROUT-owned assets; never member uploads.
 
 ## Email
