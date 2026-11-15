@@ -34,5 +34,6 @@
   "trust.pillar.how": "So funktioniert es",
   "trust.pillar.stored": "Was wir speichern",
   "trust.pillar.notStored": "Was wir NICHT speichern",
-  "trust.pillar.deepDive": "Technische Details →"
+  "trust.pillar.deepDive": "Technische Details →",
+  "trust.pillar.showDetails": "Details anzeigen"
 }

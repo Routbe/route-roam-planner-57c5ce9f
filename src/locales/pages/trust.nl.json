@@ -34,5 +34,6 @@
   "trust.pillar.how": "Hoe dit werkt",
   "trust.pillar.stored": "Wat we wél opslaan",
   "trust.pillar.notStored": "Wat we NIET opslaan",
-  "trust.pillar.deepDive": "Technische details →"
+  "trust.pillar.deepDive": "Technische details →",
+  "trust.pillar.showDetails": "toon details"
 }

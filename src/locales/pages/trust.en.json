@@ -34,5 +34,6 @@
   "trust.pillar.how": "How it works",
   "trust.pillar.stored": "What we store",
   "trust.pillar.notStored": "What we do NOT store",
-  "trust.pillar.deepDive": "Technical deep-dive →"
+  "trust.pillar.deepDive": "Technical deep-dive →",
+  "trust.pillar.showDetails": "show details"
 }
