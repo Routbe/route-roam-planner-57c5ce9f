@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/middleware";
-import { availabilityRule, bookingRequest, caldavCredentials, eventTypeInput, icsFeedCredentials } from "./types";
+import { availabilityRule, caldavCredentials, eventTypeInput, icsFeedCredentials, parseBookingRequest } from "./types";
 
 const uuid = z.string().uuid();
 const fail = (e: unknown) => {
@@ -76,8 +76,23 @@ export const releaseBookingSlot = createServerFn({ method: "POST" })
     }
   });
 
+/** Public: the hosts' booking public keys for one event type (references only, never user ids). */
+export const getHostBookingKeys = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => z.object({ id: uuid }).parse(input))
+  .handler(async ({ data }) => {
+    const k = await import("./host-booking-key.server");
+    try {
+      if (!(await k.bookingKeyStorageReady())) return { ok: false as const, reason: "host_key_missing" as const };
+      const r = await k.eventTypeHostKeys(await k.productionBookingKeyStore(), await k.eventTypeHostIds(data.id));
+      return r.ok ? { ok: true as const, hosts: k.publicHostKeys(r.hosts) } : r;
+    } catch (e) {
+      console.error("[booking] host keys", e instanceof Error ? e.message : "error");
+      return { ok: false as const, reason: "host_key_missing" as const };
+    }
+  });
+
 export const createBooking = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => bookingRequest.parse(input))
+  .inputValidator(parseBookingRequest)
   .handler(async ({ data }) => {
     await (await import("@/lib/platform-features.server")).assertPlatformFeature("bookings");
     const { hitRateLimit } = await import("@/lib/rate-limit-db.server");
@@ -117,6 +132,35 @@ export const getBookingStudio = createServerFn({ method: "GET" })
     } catch (e) {
       console.error("[booking] studio", e instanceof Error ? e.message : "error");
       return { ready: false as const };
+    }
+  });
+
+/** The caller's own published booking key document (public key + seed sealed under their workspace key). */
+export const getMyBookingKey = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async ({ context }) => {
+    const k = await import("./host-booking-key.server");
+    if (!(await k.bookingKeyStorageReady())) return { ok: false as const, reason: "storage_unavailable" as const };
+    try {
+      return { ok: true as const, doc: await k.readBookingKey(await k.productionBookingKeyStore(), context.userId) };
+    } catch (e) {
+      console.error("[booking] key read", e instanceof Error ? e.message : "error");
+      return { ok: false as const, reason: "storage_unavailable" as const };
+    }
+  });
+
+/** Publishes the caller's booking key made in their crypto worker; never replaces another key unless asked. */
+export const publishMyBookingKey = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((input: unknown) => z.object({ doc: z.unknown(), replace: z.boolean().default(false) }).strict().parse(input))
+  .handler(async ({ data, context }) => {
+    const k = await import("./host-booking-key.server");
+    if (!(await k.bookingKeyStorageReady())) return { ok: false as const, reason: "storage_unavailable" as const };
+    try {
+      return await k.publishBookingKey(await k.productionBookingKeyStore(), context.userId, data.doc, data.replace);
+    } catch (e) {
+      console.error("[booking] key publish", e instanceof Error ? e.message : "error");
+      return { ok: false as const, reason: "storage_unavailable" as const };
     }
   });
 

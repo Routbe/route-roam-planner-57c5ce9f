@@ -36,6 +36,8 @@ import { beginOperation, endOperation } from "./operation-control";
 import { passwordHandlers, type PasswordOp } from "./password-enclave";
 import { ENVELOPE_MAX_BYTES, ENVELOPE_MAX_PLAINTEXT, generateRecipientKeys, keyId, openEnvelope, PUBLIC_KEY_BYTES, publicKeyOf, sealEnvelope } from "./pqc-envelope";
 import { loadRve1Key, rve1SeedAad, saveRve1Key } from "./rve1-key-store";
+import { BookingSealError, hostBookingKeys, normalizePayload, openBookingPayload, sealBookingPayload, type BookingPayload } from "./booking-seal";
+import { hostBookingKeyDoc, hostRefOf, MAX_SEALED_HOSTS, type HostBookingKeyDoc } from "@/lib/booking-engine/sealed-booking";
 import { vaultContext } from "@/lib/vault/vault-context";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { ed25519 } from "@noble/curves/ed25519.js";
@@ -520,6 +522,46 @@ async function storeMaster(userId: string, entropy: Uint8Array) {
   }
 }
 
+// ---- Host booking key (Fase 1) ------------------------------------------------
+
+const hostBookingKeyAad = (userId: string, kid: string) => `rout.booking.host-key.v1:${userId}:${kid}`;
+const MAX_BOOKING_OPEN_ITEMS = 200;
+
+function bookingKeyDoc(v: unknown): HostBookingKeyDoc {
+  const r = hostBookingKeyDoc.safeParse(v);
+  return r.success ? r.data : fail("invalid_input");
+}
+
+/**
+ * Runs `fn` with the host's booking secret key, opened from the seed sealed
+ * under this member's workspace key. The seed and secret key exist only for
+ * the duration of `fn` and are zero-filled afterwards.
+ */
+async function withHostBookingKey<T>(userId: string, doc: HostBookingKeyDoc, fn: (secretKey: Uint8Array, ref: string) => T | Promise<T>): Promise<T> {
+  const owner = str(userId, 64);
+  if (!UUID.test(owner)) fail("invalid_input");
+  const dk = await deviceKeyFor(owner);
+  if (doc.keyId !== dk.keyId) fail("key_mismatch");
+  let seed: Uint8Array | null = null;
+  let secretKey: Uint8Array | null = null;
+  let publicKey: Uint8Array | null = null;
+  try {
+    seed = await openBytes(dk.key, doc.sealedSeed, hostBookingKeyAad(owner, doc.kid));
+    if (seed.length !== 32) fail("decrypt_failed");
+    const keys = hostBookingKeys(seed);
+    secretKey = keys.secretKey;
+    publicKey = keys.publicKey;
+    // The published public key must be the one this seed produces.
+    if (b64u.encode(publicKey) !== doc.publicKey || b64u.encode(keys.kid) !== doc.kid) fail("decrypt_failed");
+    return await fn(secretKey, hostRefOf(publicKey));
+  } catch (e) {
+    if (e instanceof BookingSealError) fail("decrypt_failed");
+    throw e;
+  } finally {
+    wipe(seed, secretKey);
+  }
+}
+
 // ---- Operations -------------------------------------------------------------
 
 type Handlers = { [K in EnclaveOp]: (args: EnclaveOps[K]["req"]) => Promise<EnclaveOps[K]["res"]> };
@@ -988,6 +1030,81 @@ const coreHandlers: CoreHandlers = {
         return fail("decrypt_failed");
       }
     });
+  },
+
+  async "bookingKey.ensure"({ userId, existing }) {
+    const owner = str(userId, 64);
+    if (!UUID.test(owner)) fail("invalid_input");
+    if (existing !== null && existing !== undefined) {
+      const doc = bookingKeyDoc(existing);
+      await withHostBookingKey(owner, doc, () => null);
+      return { doc, created: false };
+    }
+    const dk = await deviceKeyFor(owner);
+    const seed = crypto.getRandomValues(new Uint8Array(32));
+    let secretKey: Uint8Array | null = null;
+    try {
+      const keys = hostBookingKeys(seed);
+      secretKey = keys.secretKey;
+      const kid = b64u.encode(keys.kid);
+      const doc: HostBookingKeyDoc = {
+        v: 1, kid, publicKey: b64u.encode(keys.publicKey), keyId: dk.keyId,
+        sealedSeed: await sealBytes(dk.key, seed, hostBookingKeyAad(owner, kid)),
+      };
+      return { doc: bookingKeyDoc(doc), created: true };
+    } finally {
+      wipe(seed, secretKey);
+    }
+  },
+
+  async "bookingKey.open"({ userId, doc, items }) {
+    const key = bookingKeyDoc(doc);
+    if (!Array.isArray(items) || items.length > MAX_BOOKING_OPEN_ITEMS) fail("invalid_input");
+    const list = items.map((it) => {
+      const envelope = bytes((it as { envelope?: unknown })?.envelope);
+      if (envelope.byteLength > ENVELOPE_MAX_BYTES) fail("invalid_input");
+      return { payloadId: str((it as { payloadId?: unknown }).payloadId, 64), envelope };
+    });
+    return withHostBookingKey(userId, key, (secretKey, ref) => ({
+      payloads: list.map(({ payloadId, envelope }): BookingPayload | null => {
+        try {
+          return openBookingPayload({ envelope, copy: "host", hostUserId: ref, payloadId, secretKey });
+        } catch {
+          return null;
+        }
+      }),
+    }));
+  },
+
+  async "booking.seal"({ hosts, payload }) {
+    if (!Array.isArray(hosts) || hosts.length < 1 || hosts.length > MAX_SEALED_HOSTS) fail("invalid_input");
+    let normalized: BookingPayload;
+    try {
+      normalized = normalizePayload(payload);
+    } catch {
+      return fail("invalid_input");
+    }
+    const recipients = hosts.map((h) => {
+      const publicKey = bytes((h as { publicKey?: unknown })?.publicKey);
+      if (publicKey.byteLength !== PUBLIC_KEY_BYTES) fail("invalid_input");
+      const ref = str((h as { ref?: unknown }).ref, 64);
+      // A reference that does not belong to its key would bind the envelope to the wrong host.
+      if (hostRefOf(publicKey) !== ref) fail("invalid_input");
+      return { ref, publicKey };
+    });
+    if (new Set(recipients.map((r) => r.ref)).size !== recipients.length) fail("invalid_input");
+    const payloadId = crypto.randomUUID();
+    try {
+      return {
+        payloadId,
+        hosts: recipients.map(({ ref, publicKey }) => ({
+          ref,
+          envelope: sealBookingPayload({ hostUserId: ref, payloadId, payload: normalized, hostPublicKey: publicKey }).host,
+        })),
+      };
+    } catch {
+      return fail("invalid_input");
+    }
   },
 
   async "pseudonym.derive"({ masterSeed, hostId, bookingNonce }) {

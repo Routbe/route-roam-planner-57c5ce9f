@@ -28,6 +28,7 @@ const PUBLIC_SERVER_FNS = new Set([
   "src/lib/bluesky-login.functions.ts#requestFediverseEmailCode",
   "src/lib/booking-engine/booking.functions.ts#createBooking",
   "src/lib/booking-engine/booking.functions.ts#getBookingSummary",
+  "src/lib/booking-engine/booking.functions.ts#getHostBookingKeys",
   "src/lib/booking-engine/booking.functions.ts#getNextBookingSlots",
   "src/lib/booking-engine/booking.functions.ts#getPublicEventType",
   "src/lib/booking-engine/booking.functions.ts#getPublicSlots",

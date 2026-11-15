@@ -12,7 +12,8 @@ export interface IcsInvite {
   url?: string;
   organizerEmail: string;
   organizerName?: string;
-  attendeeEmail: string;
+  /** Omitted for sealed bookings: the server does not know the guest. */
+  attendeeEmail?: string | null;
   attendeeName?: string;
   now?: Date;
 }
@@ -59,7 +60,9 @@ export function buildIcs(i: IcsInvite): string {
     ...(i.location ? [`LOCATION:${escapeText(i.location)}`] : []),
     ...(i.url ? [`URL:${i.url}`] : []),
     `ORGANIZER;CN=${param(i.organizerName ?? "ROUT")}:mailto:${i.organizerEmail}`,
-    `ATTENDEE;CN=${param(i.attendeeName ?? i.attendeeEmail)};ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=FALSE:mailto:${i.attendeeEmail}`,
+    ...(i.attendeeEmail
+      ? [`ATTENDEE;CN=${param(i.attendeeName ?? i.attendeeEmail)};ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=FALSE:mailto:${i.attendeeEmail}`]
+      : []),
     `STATUS:${i.method === "CANCEL" ? "CANCELLED" : "CONFIRMED"}`,
     "TRANSP:OPAQUE",
     "END:VEVENT",

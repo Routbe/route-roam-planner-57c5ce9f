@@ -7,6 +7,7 @@ export const Route = createFileRoute("/api_/public/booking-ics/$id")({
       GET: async ({ params, request }) => {
         if (!/^[0-9a-f-]{36}$/i.test(params.id)) return new Response("Not found", { status: 404 });
         const { buildIcs } = await import("@/lib/booking-engine/ics");
+        const { isSealedGuestEmail } = await import("@/lib/booking-engine/sealed-booking");
         const token = new URL(request.url).searchParams.get("token");
         if (!token || !/^[a-f0-9]{64}$/.test(token)) return new Response("Forbidden", { status: 403, headers: { "Cache-Control": "no-store" } });
         // Token check happens in the database (db/0216); a wrong token yields a masked view.
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/api_/public/booking-ics/$id")({
           uid: v.icsUid, sequence: Number(v.sequence), method: "REQUEST",
           startUtc: new Date(v.startUtc), endUtc: new Date(v.endUtc), summary: v.title,
           location: loc, url: v.locationKind === "video" ? loc : undefined,
-          organizerEmail: "noreply@rout.be", organizerName: "ROUT", attendeeEmail: v.guestEmail, attendeeName: v.guestName,
+          organizerEmail: "noreply@rout.be", organizerName: "ROUT", ...(isSealedGuestEmail(v.guestEmail) ? {} : { attendeeEmail: v.guestEmail, attendeeName: v.guestName }),
         });
         return new Response(ics, {
           headers: { "Content-Type": "text/calendar; charset=utf-8", "Content-Disposition": 'attachment; filename="rout-afspraak.ics"', "Cache-Control": "private, no-store" },

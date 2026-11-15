@@ -1,7 +1,7 @@
 /**
  * Zero-knowledge booking payloads (Phase B, owner requirements 2026-11-13).
  *
- * Title, description, guest note and intake answers are sealed in the browser
+ * Title, description, guest name, e-mail, note and intake answers are sealed in the browser
  * as RVE1 envelopes (pqc-envelope.ts: ML-KEM-1024 + X25519 hybrid KEM,
  * XChaCha20-Poly1305). There are two copies, each a separate envelope kind
  * whose key holder is fixed and never server-side:
@@ -49,12 +49,15 @@ export class BookingSealError extends Error {
 export type IntakeAnswer = { questionId: string; value: string };
 export type BookingPayload = {
   title?: string;
+  /** Guest contact (Fase 1): never stored in plaintext; the host opens it on their device. */
+  name?: string;
+  email?: string;
   description?: string;
   note?: string;
   answers?: IntakeAnswer[];
 };
 
-const LIMITS = { title: 200, description: 4000, note: 4000, answers: 50, questionId: 64, value: 2000 } as const;
+const LIMITS = { title: 200, name: 120, email: 254, description: 4000, note: 4000, answers: 50, questionId: 64, value: 2000 } as const;
 
 const wipe = (...a: (Uint8Array | undefined | null)[]) => {
   for (const x of a) x?.fill(0);
@@ -68,9 +71,11 @@ function checkText(v: unknown, max: number): string {
 /** Validates and normalises a payload; unknown keys are refused, not dropped. */
 export function normalizePayload(p: BookingPayload): BookingPayload {
   if (typeof p !== "object" || p === null || Array.isArray(p)) throw new BookingSealError();
-  for (const k of Object.keys(p)) if (!["title", "description", "note", "answers"].includes(k)) throw new BookingSealError();
+  for (const k of Object.keys(p)) if (!["title", "name", "email", "description", "note", "answers"].includes(k)) throw new BookingSealError();
   const out: BookingPayload = {};
   if (p.title !== undefined) out.title = checkText(p.title, LIMITS.title);
+  if (p.name !== undefined) out.name = checkText(p.name, LIMITS.name);
+  if (p.email !== undefined) out.email = checkText(p.email, LIMITS.email);
   if (p.description !== undefined) out.description = checkText(p.description, LIMITS.description);
   if (p.note !== undefined) out.note = checkText(p.note, LIMITS.note);
   if (p.answers !== undefined) {
@@ -93,6 +98,8 @@ export function encodePayload(p: BookingPayload): Uint8Array {
   const canonical = {
     v: BOOKING_PAYLOAD_VERSION,
     ...(n.title !== undefined ? { title: n.title } : {}),
+    ...(n.name !== undefined ? { name: n.name } : {}),
+    ...(n.email !== undefined ? { email: n.email } : {}),
     ...(n.description !== undefined ? { description: n.description } : {}),
     ...(n.note !== undefined ? { note: n.note } : {}),
     ...(n.answers !== undefined ? { answers: n.answers.map((a) => ({ questionId: a.questionId, value: a.value })) } : {}),

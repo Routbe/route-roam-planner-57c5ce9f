@@ -1,3 +1,4 @@
+import { SEALED_GUEST_NAME } from "@/lib/booking-engine/sealed-booking";
 import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth/middleware";
 
@@ -89,7 +90,7 @@ export const getCommandCenter = createServerFn({ method: "GET" })
       ...logins.map((r) => ({ id: `l:${r["id"]}`, kind: "login" as const, title: `Login gedetecteerd bij ${String(r["app"])}`, detail: null, at: iso(r["disclosed_at"]) })),
       ...cRows.map((r) => ({ id: `c:${r["id"]}`, kind: "contact" as const, title: "Inkomend contactbericht via hub", detail: snippet(r["message"]) ?? snippet(r["name"]), at: iso(r["created_at"]) })),
       ...dRows.map((r) => ({ id: `d:${r["id"]}`, kind: "relay" as const, title: r["status"] === "forwarded" ? `Relay-mail doorgestuurd van ${String(r["app"])}` : `Relay-mail tegengehouden van ${String(r["app"])}`, detail: null, at: iso(r["created_at"]) })),
-      ...bRows.map((r) => ({ id: `b:${r["id"]}`, kind: "booking" as const, title: `Boeking van ${String(r["guest_name"] ?? "een gast")}`, detail: `Op ${new Date(String(r["start_utc"])).toLocaleString("nl-BE")}`, at: iso(r["created_at"]) })),
+      ...bRows.map((r) => ({ id: `b:${r["id"]}`, kind: "booking" as const, title: r["guest_name"] && r["guest_name"] !== SEALED_GUEST_NAME ? `Boeking van ${String(r["guest_name"])}` : "Nieuwe boeking van een gast", detail: `Op ${new Date(String(r["start_utc"])).toLocaleString("nl-BE")}`, at: iso(r["created_at"]) })),
     ]
       .sort((a, b) => b.at.localeCompare(a.at))
       .slice(0, 20);
@@ -102,7 +103,7 @@ export const getCommandCenter = createServerFn({ method: "GET" })
       guestbook30d: guestbook,
       upcomingBookings: bookings,
       nextBookingAt: nextBooking,
-      todayBookings: tRows.map((r) => ({ id: String(r["id"]), guest: String(r["guest_name"] ?? "Gast"), at: iso(r["start_utc"]) })),
+      todayBookings: tRows.map((r) => ({ id: String(r["id"]), guest: r["guest_name"] && r["guest_name"] !== SEALED_GUEST_NAME ? String(r["guest_name"]) : "Gast", at: iso(r["start_utc"]) })),
       events,
     };
   });

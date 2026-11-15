@@ -8,6 +8,7 @@ import { recomputeUser } from "./recompute.server";
 import type { EventTypeInput, AvailabilityRule } from "./types";
 import { intakeFields } from "./intake";
 import { effectiveMaxDaysAhead } from "./slot-rules";
+import { parseSealedIntake } from "./sealed-booking";
 
 /** db/0218 columns exist (cached 60 s), so saves never reference missing columns before it is applied. */
 let phase2Probe: { ok: boolean; at: number } | null = null;
@@ -20,8 +21,9 @@ async function hasPhase2(): Promise<boolean> {
 
 /** Host-only view of intake answers: labels + values; sealed ones are opened server-side. */
 async function readIntake(b: Record<string, unknown>): Promise<{ label: string; value: string }[]> {
-  const stored = b["intake_answers"] as { plain?: Record<string, unknown>; sealed?: { ciphertext: string; iv: string } } | null;
-  if (!stored) return [];
+  const stored = b["intake_answers"] as { v?: unknown; plain?: Record<string, unknown>; sealed?: { ciphertext: string; iv: string } } | null;
+  // v2 = end-to-end sealed (Fase 1): only the host's device can open it.
+  if (!stored || stored.v === 2) return [];
   const fields = intakeFields.safeParse(b["custom_fields"] ?? []).data ?? [];
   let all: Record<string, unknown> = { ...(stored.plain ?? {}) };
   if (stored.sealed) {
@@ -73,7 +75,7 @@ export async function overview(userId: string) {
         order by t.created_at desc limit 100`,
     sql`select id, adapter, label, sync_status, last_error_code, last_synced_at from public.connected_calendars
         where user_id = ${userId}::uuid order by created_at`,
-    sql`select b.id, b.status, b.start_utc, b.end_utc, b.guest_name, b.guest_email, b.guest_timezone, b.guest_note, b.intake_answers, b.event_type_id, t.title, t.custom_fields
+    sql`select b.id, b.host_user_id, b.status, b.start_utc, b.end_utc, b.guest_name, b.guest_email, b.guest_timezone, b.guest_note, b.intake_answers, b.event_type_id, t.title, t.custom_fields
         from public.bookings b join public.booking_event_types t on t.id = b.event_type_id
         where (( ${workspaceId}::uuid is null and b.host_user_id = ${userId}::uuid and b.workspace_id is null)
           or (${canWs} and b.workspace_id = ${workspaceId}::uuid))
@@ -119,12 +121,21 @@ export async function overview(userId: string) {
     })),
     overrides: overrides.map((o) => ({ id: String(o["id"]), kind: String(o["kind"]) as "free" | "busy",
       startUtc: new Date(String(o["start_utc"])).toISOString(), endUtc: new Date(String(o["end_utc"])).toISOString() })),
-    bookings: (await Promise.all(bookings.map(async (b) => ({ ...b, intake: await readIntake(b) })))).map((b) => ({
-      intake: b.intake,
-      id: String(b["id"]), status: String(b["status"]), title: String(b["title"]),
-      startUtc: new Date(String(b["start_utc"])).toISOString(), endUtc: new Date(String(b["end_utc"])).toISOString(),
-      guestName: String(b["guest_name"]), guestEmail: String(b["guest_email"]), guestTimezone: String(b["guest_timezone"]), guestNote: s(b["guest_note"]),
-    })),
+    bookings: (await Promise.all(bookings.map(async (b) => ({ ...b, intake: await readIntake(b) })))).map((b) => {
+      const sealed = parseSealedIntake(b["intake_answers"]);
+      const fields = intakeFields.safeParse(b["custom_fields"] ?? []).data ?? [];
+      return {
+        intake: b.intake,
+        id: String(b["id"]), status: String(b["status"]), title: String(b["title"]),
+        startUtc: new Date(String(b["start_utc"])).toISOString(), endUtc: new Date(String(b["end_utc"])).toISOString(),
+        hostUserId: String(b["host_user_id"]),
+        // Sealed bookings carry placeholders in these columns: the real details are only in `sealed`.
+        guestName: sealed ? null : String(b["guest_name"]), guestEmail: sealed ? null : String(b["guest_email"]),
+        guestTimezone: String(b["guest_timezone"]), guestNote: sealed ? null : s(b["guest_note"]),
+        sealed: sealed ? { pid: sealed.pid, hosts: sealed.hosts } : null,
+        intakeFields: sealed ? fields.map((f) => ({ id: f.id, label: f.label, type: f.type })) : [],
+      };
+    }),
     rules: rules.map((r) => ({ weekday: Number(r["weekday"]), startMinute: Number(r["start_minute"]), endMinute: Number(r["end_minute"]), timezone: String(r["timezone"]) })),
   };
 }

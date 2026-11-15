@@ -260,4 +260,8 @@
 - [x] `/dev/emails` en `sendTestEmail` dicht buiten development
 - [x] ENVIRONMENT.md aangevuld; `vercel.json` + `build:vercel` toegevoegd (Vercel-build niet bevestigd)
 - [x] Migratiedocumentatie 0265/0277-rollback gecorrigeerd zonder `db/0277` te wijzigen
-- [ ] Gastnaam/e-mail versleuteld bij boeken: wacht op besluit host-boekingssleutel (opslagplek) en vervanging mail/Stripe
+- [x] Gastnaam, e-mail, notitie en intake versleuteld bij boeken (RVE1 bkh in de crypto-worker); server weigert plaintext; hostsleutel als Scaleway-document; Studio opent op het toestel van de host (alleen tests, geen live boeking)
+- [ ] Live boeking end-to-end bevestigen — wacht op een omgeving met Neon (DATABASE_URL) en Scaleway-clientopslag
+- [ ] Gastkopie (bkg, beheerlink-fragment) leesbaar maken voor de gast — vraagt een EXPAND-migratie: `rout_booking_guest_view` geeft intake_answers niet terug
+- [ ] Limiet per gast werkt niet meer voor versleutelde boekingen (willekeurig pseudoniem per boeking) — wacht op BBS+-gastbewijzen of eigenaarsbesluit
+- [ ] Hostsleutel aan hardware-passkey (PRF) binden — wacht op de hardware-PRF-test

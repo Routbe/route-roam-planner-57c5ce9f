@@ -12,7 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
-import { createBooking, getPublicEventType, getPublicSlots, holdBookingSlot, releaseBookingSlot } from "@/lib/booking-engine/booking.functions";
+import { createBooking, getHostBookingKeys, getPublicEventType, getPublicSlots, holdBookingSlot, releaseBookingSlot } from "@/lib/booking-engine/booking.functions";
+import { b64uDecode, b64uEncode } from "@/lib/booking-engine/sealed-booking";
 import { holdCountdown } from "@/lib/booking-engine/hold-rules";
 import { IntakeForm } from "@/components/booking/IntakeForm";
 import { BookingMonthCalendar } from "@/components/booking/BookingMonthCalendar";
@@ -42,6 +43,7 @@ export default function BookPublic({ eventTypeId, selectedStart, initial }: { ev
   const getType = useServerFn(getPublicEventType);
   const getSlots = useServerFn(getPublicSlots);
   const book = useServerFn(createBooking);
+  const hostKeysFn = useServerFn(getHostBookingKeys);
   const holdFn = useServerFn(holdBookingSlot);
   const releaseFn = useServerFn(releaseBookingSlot);
   // Zone and clock are read after hydration so SSR and the first client frame match; until then the
@@ -157,6 +159,27 @@ export default function BookPublic({ eventTypeId, selectedStart, initial }: { ev
   const today = localDayKey(new Date().toISOString(), tz);
   const LocIcon = et.locationKind === "video" ? Video : et.locationKind === "phone" ? Phone : MapPin;
 
+  const sealDetails = async (checkedAnswers: IntakeAnswers): Promise<{ ok: true; value: { pid: string; hosts: Record<string, string> } } | { ok: false; reason: "host_key_missing" | "error" }> => {
+    try {
+      const keys = await hostKeysFn({ data: { id: eventTypeId } });
+      if (!keys.ok) return { ok: false, reason: keys.reason === "host_key_missing" ? "host_key_missing" : "error" };
+      const hosts = keys.hosts.map((h) => ({ ref: h.ref, publicKey: b64uDecode(h.publicKey) }));
+      if (hosts.length === 0 || hosts.some((h) => !h.publicKey)) return { ok: false, reason: "host_key_missing" };
+      const answers = Object.entries(checkedAnswers)
+        .filter(([, v]) => v !== "")
+        .map(([questionId, v]) => ({ questionId, value: typeof v === "boolean" ? (v ? "true" : "false") : v }));
+      const { enclave } = await import("@/lib/crypto-enclave/client");
+      const out = await enclave.booking.seal(hosts.map((h) => ({ ref: h.ref, publicKey: h.publicKey! })), {
+        name: form.name.trim(), email: form.email.trim().toLowerCase(),
+        ...(form.note.trim() ? { note: form.note } : {}),
+        ...(answers.length ? { answers } : {}),
+      });
+      return { ok: true, value: { pid: out.payloadId, hosts: Object.fromEntries(out.hosts.map((h) => [h.ref, b64uEncode(h.envelope)])) } };
+    } catch {
+      return { ok: false, reason: "error" };
+    }
+  };
+
   const submit = async () => {
     if (!slot || sending) return;
     const checked = validateIntake(et.customFields, answers);
@@ -164,8 +187,15 @@ export default function BookPublic({ eventTypeId, selectedStart, initial }: { ev
     setSending(true);
     setError(null);
     const held = hold && hold.startUtc === slot ? hold : null;
-    const r = await book({ data: { eventTypeId, startUtc: slot, guestName: form.name, guestEmail: form.email, guestTimezone: tz, guestNote: form.note || null,
-      intakeAnswers: checked.answers, holdId: held?.holdId ?? null, holdSecret: held?.secret ?? null } })
+    // Fase 1: name, e-mail, note and answers are sealed in the crypto worker for each host; the server only gets envelopes.
+    const sealed = await sealDetails(checked.answers);
+    if (!sealed.ok) {
+      setSending(false);
+      setError(t(sealed.reason === "host_key_missing" ? "booking.public.hostKeyMissing" : "booking.err.generic"));
+      return;
+    }
+    const r = await book({ data: { eventTypeId, startUtc: slot, guestTimezone: tz, sealed: sealed.value,
+      holdId: held?.holdId ?? null, holdSecret: held?.secret ?? null } })
       .catch(() => ({ ok: false as const, reason: "invalid" as const }));
     setSending(false);
     if (r.ok) {
@@ -178,6 +208,7 @@ export default function BookPublic({ eventTypeId, selectedStart, initial }: { ev
     else if (r.reason === "guest_limit") setError(t("booking.public.guestLimit"));
     else if (r.reason === "payment_unavailable") setError(t("booking.public.paymentUnavailable"));
     else if (r.reason === "rate_limited") setError(t("booking.public.rateLimited"));
+    else if (r.reason === "host_key_missing") setError(t("booking.public.hostKeyMissing"));
     else if (r.reason === "invalid" || r.reason === "invalid_intake") setError(t("booking.err.invalid"));
     else setError(t("booking.err.generic"));
   };
@@ -275,6 +306,7 @@ export default function BookPublic({ eventTypeId, selectedStart, initial }: { ev
             <div className="space-y-1.5"><Label htmlFor="bk-email">{t("booking.public.email")}</Label><Input id="bk-email" required type="email" maxLength={254} autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             <div className="space-y-1.5"><Label htmlFor="bk-note">{t("booking.public.note")}</Label><Textarea id="bk-note" maxLength={2000} rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></div>
             <IntakeForm fields={et.customFields} answers={answers} onChange={setAnswers} />
+            <p className="flex items-start gap-2 text-xs text-muted-foreground"><Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />{t("booking.public.sealedNote")}</p>
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={sending}>
               {sending && <Loader2 className="h-4 w-4 animate-spin" />}

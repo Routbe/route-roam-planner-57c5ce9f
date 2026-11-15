@@ -8,8 +8,9 @@
  */
 import { sql, withDbContext } from "@/lib/neon";
 import type { BookingOutcome, BookingRequest } from "./types";
-import { splitSensitive, validateIntake } from "./intake";
 import { publicEventType } from "./public.server";
+import { b64uDecode, isHostEnvelopeFor, MAX_SEALED_INTAKE_BYTES, SEALED_GUEST_NAME, SEALED_INTAKE_VERSION, sealedGuestEmail } from "./sealed-booking";
+import type { EventTypeHostKey } from "./host-booking-key.server";
 
 const OUTCOMES = new Set(["slot_taken", "outside_availability", "too_soon", "too_far", "inactive", "invalid_input", "guest_limit"]);
 
@@ -23,37 +24,50 @@ type CreateResult =
   | { ok: false; reason: string }
   | { ok: true; bookingIds: string[]; hostIds: string[]; token: string | null; status: string; holdExpiresAt: string | null; groupId: string | null };
 
-/** Try to book; never throws for a lost race. */
+/**
+ * Checks sealed guest details against the hosts' published keys: exactly one
+ * envelope per host reference, each an RVE1 bkh header for that host's key id
+ * in one of the padded sizes. The server cannot open them and never tries.
+ */
+export function sealedIntakeFor(sealed: BookingRequest["sealed"], hosts: EventTypeHostKey[]): string | null {
+  const refs = Object.keys(sealed.hosts);
+  if (refs.length !== hosts.length) return null;
+  for (const h of hosts) {
+    const text = sealed.hosts[h.ref];
+    const envelope = typeof text === "string" ? b64uDecode(text) : null;
+    if (!envelope || !isHostEnvelopeFor(envelope, h.kid)) return null;
+  }
+  const json = JSON.stringify({ v: SEALED_INTAKE_VERSION, pid: sealed.pid, hosts: sealed.hosts });
+  return new TextEncoder().encode(json).length <= MAX_SEALED_INTAKE_BYTES ? json : null;
+}
+
+/** Try to book; never throws for a lost race. Guest details arrive only sealed (Fase 1). */
 export async function bookSlot(req: BookingRequest): Promise<BookingOutcome> {
   const et = await publicEventType(req.eventTypeId);
   if (!et || et.hostCount === 0) return { ok: false, reason: "inactive" };
   const paid = et.priceCents != null;
   if (paid && !process.env["STRIPE_SECRET_KEY"]) return { ok: false, reason: "payment_unavailable" };
 
-  const checked = validateIntake(et.customFields, req.intakeAnswers ?? {});
-  if (!checked.ok) return { ok: false, reason: "invalid_intake" };
-  let intake: Record<string, unknown> | null = null;
-  if (Object.keys(checked.answers).length) {
-    const { plain, secret } = splitSensitive(et.customFields, checked.answers);
-    intake = { v: 1, plain };
-    if (Object.keys(secret).length) {
-      // Sensitive answers are sealed (AES-GCM) bound to the event type; never logged or sent to third parties.
-      const { seal, encryptionConfigured } = await import("@/lib/crypto/secretbox.server");
-      if (!encryptionConfigured()) return { ok: false, reason: "invalid_intake" };
-      intake["sealed"] = await seal(JSON.stringify(secret), `intake:${et.id}`);
-    }
-  }
+  const keys = await import("./host-booking-key.server");
+  if (!(await keys.bookingKeyStorageReady())) return { ok: false, reason: "host_key_missing" };
+  const hostKeys = await keys.eventTypeHostKeys(await keys.productionBookingKeyStore(), await keys.eventTypeHostIds(et.id));
+  if (!hostKeys.ok) return { ok: false, reason: hostKeys.reason };
+  const intakeJson = sealedIntakeFor(req.sealed, hostKeys.hosts);
+  if (!intakeJson) return { ok: false, reason: "invalid_intake" };
+  // Fixed placeholders: db/0218 requires a name and an address, but neither may be the guest's.
+  const guestName = SEALED_GUEST_NAME;
+  const guestEmail = sealedGuestEmail(req.sealed.pid);
+  const guestNote: string | null = null;
 
   let r: CreateResult;
   try {
-    const intakeJson = intake ? JSON.stringify(intake) : null;
     // The 9-argument form (db/0218) consumes the visitor's soft-lock; a hold only exists once 0218 is live.
     const rows = (req.holdId && req.holdSecret && et.holdMinutes != null
       ? await sql`select public.rout_booking_create(${et.id}::uuid, ${req.startUtc}::timestamptz,
-          ${req.guestName}, ${req.guestEmail}, ${req.guestTimezone}, ${req.guestNote}, ${intakeJson}::jsonb,
+          ${guestName}, ${guestEmail}, ${req.guestTimezone}, ${guestNote}, ${intakeJson}::jsonb,
           ${req.holdId}::uuid, ${req.holdSecret}) as r`
       : await sql`select public.rout_booking_create(${et.id}::uuid, ${req.startUtc}::timestamptz,
-          ${req.guestName}, ${req.guestEmail}, ${req.guestTimezone}, ${req.guestNote}, ${intakeJson}::jsonb) as r`) as { r: CreateResult }[];
+          ${guestName}, ${guestEmail}, ${req.guestTimezone}, ${guestNote}, ${intakeJson}::jsonb) as r`) as { r: CreateResult }[];
     r = rows[0]!.r;
   } catch (err) {
     if (isSlotTakenError(err)) return { ok: false, reason: "slot_taken" };
@@ -67,7 +81,7 @@ export async function bookSlot(req: BookingRequest): Promise<BookingOutcome> {
   const firstId = r.bookingIds[0]!;
   let checkoutUrl: string | null = null;
   if (paid) {
-    checkoutUrl = await createCheckoutHold(firstId, et, req, new Date(r.holdExpiresAt!), r.token).catch(async (e: unknown) => {
+    checkoutUrl = await createCheckoutHold(firstId, et, new Date(r.holdExpiresAt!), r.token).catch(async (e: unknown) => {
       console.error("[booking] checkout", e instanceof Error ? e.message : "error");
       await releaseBookingHold(firstId);
       return null;
@@ -87,12 +101,12 @@ function inviteAsHost(bookingId: string, hostUserId: string, method: "REQUEST" |
 }
 
 async function createCheckoutHold(
-  bookingId: string, et: { title: string; currency: string; priceCents: number | null }, req: BookingRequest, expires: Date, bookingToken: string | null,
+  bookingId: string, et: { title: string; currency: string; priceCents: number | null }, expires: Date, bookingToken: string | null,
 ): Promise<string> {
   const site = (process.env["PUBLIC_SITE_URL"] ?? "https://rout.be").replace(/\/$/, "");
   const body = new URLSearchParams({
     mode: "payment",
-    customer_email: req.guestEmail,
+    // No customer_email: ROUT does not know the guest's address; Stripe asks for it on its own page.
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": et.currency,
     "line_items[0][price_data][unit_amount]": String(et.priceCents),
