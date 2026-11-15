@@ -106,6 +106,13 @@ use the editor.
 ## Booking phases B–G
 - Phase B–G security rules live in src/lib/booking-engine/AGENTS.md and bind every booking, recovery and crypto change. Why: the owner's hard requirements stay in one scoped place.
 
+## Server function guards
+- Every createServerFn export uses requireAuth, requireDeveloperAccess or optionalAuth, unless listed in PUBLIC_SERVER_FNS in src/test/server-fn-auth-guard.test.ts; adding a public function means adding it there with review. Why: the _authenticated layout only gates the UI, the RPC endpoint stays callable.
+- /dev/* preview routes and their server functions refuse outside development via import.meta.env.DEV, never process.env.NODE_ENV. Why: NODE_ENV is not reliable in the edge runtime.
+
+## Deployment headers
+- Security headers come only from src/lib/security-headers.ts; vercel.json adds none. Why: a second CSP or frame header is intersected by browsers and breaks route-specific policies.
+
 <!-- AGENT-MEMORY:BEGIN -->
 ## One-file migration rollout
 - A GO for a single migration is applied from chat with scripts/migration-rollout.ts: the exact db/ file text travels as one parameter, runs only if its SHA-256 equals the file checksum and its predecessor is recorded, and is recorded with the definer guard in the same transaction (dry run: src/test/migration-rollout.test.ts). Why: the Neon connection stays unlinked, so migrate-gateway.ts cannot run, and a retyped or hand-split file must never diverge from db/.
