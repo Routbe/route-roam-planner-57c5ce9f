@@ -6,6 +6,8 @@
  * passkey PRF output) cross into the worker once; keys never come back out.
  * Typed arrays are sent as transferables, so the sender's copy is detached.
  */
+import type { BookingPayload } from "./booking-seal";
+import type { HostBookingKeyDoc } from "@/lib/booking-engine/sealed-booking";
 import type { SealedBlob } from "@/lib/e2ee/crypto";
 import type { PrivateEnvelope } from "@/lib/ledger/crypto";
 import type { Capability, CapabilityGrant } from "@/lib/protocol/capabilities";
@@ -89,6 +91,23 @@ export interface EnclaveOps {
   "rve1.seal": { req: { userId: string; kind: "vcc"; purpose: string; plaintext: Uint8Array }; res: { envelope: Uint8Array } };
   /** Open a vcc_ envelope; the plaintext is transferred to the UI, which must wipe it. */
   "rve1.open": { req: { userId: string; kind: "vcc"; purpose: string; envelope: Uint8Array }; res: { plaintext: Uint8Array } };
+
+  /**
+   * Host booking key (Fase 1): ML-KEM-1024 + X25519 from a random seed that is
+   * kept only sealed under the workspace key (Master Key). Returns the
+   * publishable document; with `existing` it checks that this device can open it.
+   */
+  "bookingKey.ensure": { req: { userId: string; existing: HostBookingKeyDoc | null }; res: { doc: HostBookingKeyDoc; created: boolean } };
+  /** Opens host copies (bkh) of sealed guest details; a copy that does not open yields null. */
+  "bookingKey.open": {
+    req: { userId: string; doc: HostBookingKeyDoc; items: { payloadId: string; envelope: Uint8Array }[] };
+    res: { payloads: (BookingPayload | null)[] };
+  };
+  /** Guest side: seals one payload for every host public key under a fresh payload id. */
+  "booking.seal": {
+    req: { hosts: { ref: string; publicKey: Uint8Array }[]; payload: BookingPayload };
+    res: { payloadId: string; hosts: { ref: string; envelope: Uint8Array }[] };
+  };
 
   "hash.sha256Hex": { req: { text: string }; res: string };
 
