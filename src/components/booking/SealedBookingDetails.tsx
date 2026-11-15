@@ -5,7 +5,7 @@ import { KeyRound, Loader2, Lock, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { getMyBookingKey, publishMyBookingKey } from "@/lib/booking-engine/booking.functions";
-import { b64uDecode, type HostBookingKeyDoc } from "@/lib/booking-engine/sealed-booking";
+import { b64uDecode, hostRefOf, type HostBookingKeyDoc } from "@/lib/booking-engine/sealed-booking";
 import type { BookingPayload } from "@/lib/crypto-enclave/booking-seal";
 
 type KeyState =
@@ -98,18 +98,20 @@ export function useOpenedGuestDetails(userId: string, state: KeyState, bookings:
     retry: false,
     queryFn: async () => {
       const { enclave } = await import("@/lib/crypto-enclave/client");
+      // Only this host's own copy: the one bound to the reference of its published key.
+      const ref = hostRefOf(b64uDecode(doc!.publicKey)!);
       const items: { id: string; payloadId: string; envelope: Uint8Array }[] = [];
-      const missing = new Set<string>();
-      for (const b of mine) {
-        // The host's own copy: the one whose reference is in this host's key (the server cannot know which).
-        const envelopes = Object.values(b.sealed!.hosts).map(b64uDecode).filter((x): x is Uint8Array => x !== null);
-        if (envelopes.length === 0) missing.add(b.id);
-        for (const envelope of envelopes) items.push({ id: b.id, payloadId: b.sealed!.pid, envelope });
-      }
-      const { payloads } = await enclave.bookingKey.open(userId, doc!, items.map(({ payloadId, envelope }) => ({ payloadId, envelope })));
       const out = new Map<string, BookingPayload | null>();
-      items.forEach((it, i) => { if (payloads[i]) out.set(it.id, payloads[i]); else if (!out.has(it.id)) out.set(it.id, null); });
-      for (const id of missing) out.set(id, null);
+      for (const b of mine) {
+        const text = b.sealed!.hosts[ref];
+        const envelope = text ? b64uDecode(text) : null;
+        if (envelope) items.push({ id: b.id, payloadId: b.sealed!.pid, envelope });
+        else out.set(b.id, null);
+      }
+      if (items.length > 0) {
+        const { payloads } = await enclave.bookingKey.open(userId, doc!, items.map(({ payloadId, envelope }) => ({ payloadId, envelope })));
+        items.forEach((it, i) => out.set(it.id, payloads[i] ?? null));
+      }
       return out;
     },
   });
