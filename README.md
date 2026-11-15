@@ -66,7 +66,7 @@ ROUT is a **sovereign identity operating system**. It starts as more than a link
 - **workspaces** for teams, businesses and creators, with custom domains, a developer console and OAuth apps;
 - an **AI-agent-ready platform**: agents can prepare a workspace without an account and hand it over to a human through an end-to-end-encrypted vault.
 
-All of this runs on European infrastructure (Neon Postgres in `eu-central-1`, Scaleway Object Storage in `fr-par`, Brevo email). Sign-in uses **phishing-resistant passkeys**: no passwords, no magic links and no social login fallback.
+All of this runs on European infrastructure (Neon Postgres in `eu-central-1`, Scaleway Object Storage in `fr-par`, Brevo email). Sign-in starts from **phishing-resistant passkeys**; an **OPAQUE password** (the password never reaches the server) and a one-time e-mail link are the other first factors. Social accounts can only be linked, never used to sign in on their own.
 
 > **Design principle:** the server should learn as little as possible. Keys live in the browser's cryptographic enclave, tokens are stored as hashes, identities are pairwise per app, and the database denies everything by default.
 
@@ -114,7 +114,7 @@ All of this runs on European infrastructure (Neon Postgres in `eu-central-1`, Sc
 <td><code>src/routes/w.$slug*.tsx</code>, <code>src/routes/_authenticated/studio_.w.*</code>, <code>db/96_workspaces.sql</code>, <code>db/0131_*</code></td></tr>
 
 <tr><td><b>Booking engine</b></td>
-<td>Event types with duration, buffers, minimum notice, booking horizon, capacity, confirmation mode, pricing and intake fields. Round-robin and collective host routing, availability bitmaps, signed booking tokens, ICS export and accept/decline actions. Each booking runs in one batch: advisory locks, then an availability check, then the insert. A GiST exclusion constraint is the final guard against double-booking.</td>
+<td>Event types with duration, buffers, minimum notice, booking horizon, capacity, confirmation mode, pricing and intake fields. Round-robin and collective host routing, availability bitmaps, signed booking tokens, ICS export and accept/decline actions. Guest name, e-mail, note and intake answers are sealed in the guest's browser per host (RVE1, ML-KEM-1024 + X25519); the server refuses plaintext guest fields and sends guests no e-mail for these bookings. Each booking runs in one batch: advisory locks, then an availability check, then the insert. A GiST exclusion constraint is the final guard against double-booking.</td>
 <td><code>src/lib/booking-engine/</code>, <code>src/routes/book.$eventTypeId.tsx</code>, <code>src/routes/booking.$bookingId.tsx</code></td></tr>
 
 <tr><td><b>Creator support & payments</b></td>
@@ -312,7 +312,7 @@ Both transports run the **same guarded, atomic batches**: there are no interacti
 ROUT treats security as architecture, not as a feature. These guarantees are enforced in code and tests:
 
 ### Authentication: passkey, e-mail link or password, plus a real second step
-- `src/lib/auth/sign-in-policy.ts` allow-lists the Better Auth endpoints. First factors: a **passkey** (WebAuthn, user verification required), a **one-time e-mail link** (15 minutes, with a 6-digit code for another device) or **e-mail + password** (min. 12 characters, set or reset through an e-mailed link that signs out other devices).
+- `src/lib/auth/sign-in-policy.ts` allow-lists the Better Auth endpoints. First factors: a **passkey** (WebAuthn, user verification required), an **OPAQUE password** (RFC 9807 behind a Hashcash proof-of-work, only on the `/secure/password*` pages; Better Auth's `/sign-in/email` is gone, so the server never receives the password) or a **one-time e-mail link** (15 minutes, with a 6-digit code for another device).
 - With 2FA on, password and e-mail-link sign-ins stop at a **second step**: authenticator app (TOTP), **SMS** to a verified number, a one-time recovery code or a passkey. E-mail is never a second factor. `src/lib/auth/magic-link-two-factor.ts` extends the second step to e-mail links and exposes `GET /api/auth/two-factor/options`.
 - **2FA is optional for members and mandatory for admins**: every admin server call refuses until it is on, the admin portal shows the setup screen first, and the gateway refuses `/two-factor/disable` for admins.
 - Password, e-mail-link and reset requests pass a fail-closed rate limit and the ALTCHA bot check first. On the admin portal, sign-in mails only go to admin addresses.
@@ -345,6 +345,24 @@ ROUT treats security as architecture, not as a feature. These guarantees are enf
 - A sandbox gets a **48-hour `rsk_` key** and one **unowned** workspace. Login apps stay specs until a human claims them (by link, QR or checksummed code). Only then do they become OAuth clients (`agent-sandbox.ts`, `db/0202`).
 - **Ephemeral hand-off vaults** (`src/lib/vault/*`, `db/0205`): the server stores only ciphertext and an argon2id hash of an HKDF claim proof, with a one-hour TTL. The browser decrypts and re-seals with the member's device key, then atomically commits to `workspaces.encrypted_config` and deletes the vault. **The raw secret never returns to the server.**
 - `/ai-manifest.json` is generated from the **same Zod schemas and contrast rules** the API enforces, so the documentation can never drift from validation.
+
+### Sealed guest bookings
+- On the booking page (`/@handle/booking`) the guest's browser seals name, e-mail, note and intake answers in the crypto worker as one RVE1 `bkh` envelope per host (`src/lib/crypto-enclave/booking-seal.ts`): ML-KEM-1024 + X25519, padded to 1, 4 or 16 KiB, bound to the host reference and the payload id.
+- `book.server.ts` refuses any request that carries plaintext guest fields (`plaintext_refused`) and checks every envelope header against the host's published key. The database keeps fixed placeholders where db/0218 demands a name and an e-mail.
+- The host's booking key is a document in the Scaleway client bucket (`users/<uid>/booking-key.json`): the public key plus the secret seed sealed with AES-256-GCM under the host's master key. Studio creates and publishes it on a device that holds the master key; only that device opens guest details.
+- Consequences: guests get no confirmation or cancellation e-mail (status and `.ics` are on the confirmation page), Stripe receives no `customer_email`, and the per-guest limit does not apply to sealed bookings.
+- Not covered yet: the short request form on profile cards (`requestBooking`, still plaintext), a guest copy (`bkg`) behind the manage link, hardware-passkey binding of the booking key, and a confirmed live booking. The server supplies the public key, the usual limit of web-delivered encryption.
+
+### Server-function guards
+- Every `createServerFn` export uses `requireAuth`, `requireDeveloperAccess` or `optionalAuth`, or is listed in `PUBLIC_SERVER_FNS`. `src/test/server-fn-auth-guard.test.ts` fails for any new unguarded function and for stale list entries. Route gates under `_authenticated` only hide UI.
+- `/dev/emails`, `/dev/material-lab` and `sendTestEmail` are closed outside development (`import.meta.env.DEV`).
+
+### Verification evidence (what is proven, what is not)
+- **Database rules (Z3):** `bun run verify:rls` checks every RLS policy of the schema snapshot with the Z3 solver. At schema 0277: 1,210 obligations, 1,170 proven, 10 declassified, 30 at the service boundary, 0 unproven. Still open: 55 known unique-key oracles (F6); `neon_auth` is outside the model.
+- **Timing (dudect):** `bun run test:dudect` ran N = 1,000,000 per operation for X25519, ML-KEM-1024 decapsulation, a constant-time compare, WebAuthn PRF to HKDF and AES-256-GCM: all below |t| = 4.5 (highest 4.08; `docs/dudect-audit-report.md`). OPAQUE, the ratchet and the VDF are not measured yet. A pass is statistical evidence, not a proof.
+- **Post-quantum ratchet:** ML-KEM-1024 + X25519 ratchet in `wasm/rout-zk` with worker ops and signed prekey bundles; tested, but no messaging screens yet and no live hardware test.
+- **Wesolowski VDF:** RSA-2048 (needs a trusted setup) and class groups of imaginary quadratic orders (no trusted setup; Shanks/Atkin composition) in `wasm/rout-zk`; Rust tests only, not wired into the app.
+- None of this is an external audit; `docs/HANDOVER.md` keeps the dated record.
 
 ### Privacy defaults
 - Cookieless analytics, visit de-duplication without storing referrers (`db/0194_drop_visit_referrer.sql`), dropped birthdates (`db/0161`), scheduled purges of expired data, a sunset scrubber and parental-consent flows for minors.
@@ -393,6 +411,9 @@ Without a database the public marketing pages, QR Studio and documentation still
 | `bun run lint` | ESLint (TypeScript, React Hooks, jsx-a11y, Prettier) |
 | `bun run format` | Prettier write |
 | `bunx tsgo --noEmit` | Fast type check |
+| `bun run build:vercel` | Release-env check, then a build with Nitro's `vercel` preset |
+| `bun run verify:rls` | Z3 proof of the RLS policies in `db/schema.snapshot.json` |
+| `bun run test:dudect` | dudect timing audit (long; writes `docs/dudect-audit-report.md`) |
 
 ### Operational scripts (`scripts/`)
 
@@ -490,7 +511,7 @@ workspaces    workspaces · members · team access · domains · studio drafts �
 oauth         oauth clients · codes · refresh tokens · signing keys (sealed) · consents · relays
 commerce      donations · tip pages · gift cards · promo codes · stripe connect · sepa queue
 engagement    questions · stories · guestbook · polls · reviews · feedback · events · subscribers
-booking       event types · availability · booking requests · booking tokens · calendars
+booking       event types · availability · booking requests · booking tokens · calendars · sealed guest envelopes (RVE1)
 cards         hardware cards · freezes · factory pairing · wallet passes
 agents        agent sandboxes · ephemeral vaults · pow_spent_challenges
 platform      audit_logs (hash-chained) · webhooks · rate_limits · schema_migrations · omni jobs
@@ -598,6 +619,7 @@ bun run lint
 - **~370 test files** cover pure rules (`*-rules.test.ts`), server modules, React components and routing.
 - **Postgres-backed tests** (`*-postgres.test.ts`) run real SQL, including RLS and atomic merges, against **PGlite**, an in-process Postgres. No external database is needed.
 - The browser test environment uses jsdom and `fake-indexeddb`, set up in `src/test/setup.ts`.
+- `src/test/server-fn-auth-guard.test.ts` fails for unguarded server functions; `book-sealed.test.ts` proves the database never receives a guest name, e-mail or note; `bun run verify:rls` runs the Z3 policy proof.
 - `enclave.test.ts` guarantees that the enclave worker zeroes its secrets. The `sign-in-policy`, `magic-link-two-factor`, `admin-two-factor`, `step-up`, `token-policy`, `redirect-match` and `scope-rules` suites guard the security core.
 
 ---
@@ -641,7 +663,9 @@ The app builds with **Nitro**:
 
 These items are referenced in the code or docs but not yet present in the repository:
 
-- [ ] `vercel.json` and the `build:vercel`, `db:check` and `release:check` package scripts, which `ENVIRONMENT.md` mentions. Use the direct `bun scripts/...` commands above until they are added.
+- [x] `vercel.json` and the `build:vercel` script (a real Vercel build from this tree is not yet confirmed).
+- [ ] The `db:check` and `release:check` package scripts. Use the direct `bun scripts/...` commands above.
+- [ ] Sealed bookings: live end-to-end booking, guest copy (`bkg`, needs an EXPAND migration), per-guest limit without e-mail, hardware-passkey binding, and sealing the profile-card request form.
 - [ ] `public/sw.js`: `src/lib/pwa.ts` registers a service worker, but the file is not checked in, so there is no offline support yet.
 - [ ] `worker/bun.lock`: `worker/Dockerfile` copies it with `--frozen-lockfile`. Run `bun install --cwd worker` once and commit the lockfile before building the image.
 
