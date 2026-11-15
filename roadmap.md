@@ -273,5 +273,15 @@
 - [x] Studio: uitleg bij "Max. per gast" vermeldt dat de limiet niet geldt voor versleutelde boekingen (nl/en/fr/de)
 - [x] README, ENVIRONMENT.md, safety/cryptography (alleen nl, zoals de pagina al bestond) bijgewerkt
 - [ ] Privacyverklaring juridisch laten nalezen (grondslagen, bewaartermijnen, verwerkers) — eigenaar
-- [ ] Kort aanvraagformulier op profielkaarten versleutelen (nu nog onversleuteld) — wacht op GO eigenaar
-- [ ] Trust Center-teksten buiten het nieuwe overzicht en de safety-pagina's bestaan alleen in nl/en of nl — vertaling naar fr/de wacht op GO eigenaar
+- [x] Kort aanvraagformulier op profielkaarten versleutelen — zie sectie hieronder
+- [x] Trust Center (/security) en /safety/cryptography volledig in fr/de — zie sectie hieronder
+- [ ] Overige safety-pagina's (architecture, zero-knowledge, compliance, …) bestaan alleen in nl — vertaling wacht op GO eigenaar
+
+## Profielkaart-aanvragen versleuteld + fr/de-pariteit (2026-11-15, geen Neon-wijziging, schemaniveau 0277)
+- [x] Kort aanvraagformulier: naam, e-mail en bericht als RVE1 bkh-envelop in de crypto-worker; `requestBooking` weigert plaintext (`plaintext_refused`); envelop in Scaleway `users/<uid>/inquiries/<pid>.json`, Neon krijgt alleen plaatshouders
+- [x] Hostmail zonder gastgegevens; geen mails meer naar de gast voor versleutelde aanvragen; host leest, aanvaardt/weigert en antwoordt zelf (mailto) in Studio → Afspraken
+- [x] Tests: `src/lib/booking-engine/inquiry-sealed.test.ts` (15) + `src/test/security-translations.test.ts` (8)
+- [x] Trust Center-teksten naar `src/locales/pages/trust.{nl,en,fr,de}.json`; privacypijlers in fr/de; `cryptography.{en,fr,de}.mdx`
+- [ ] Live aanvraag end-to-end bevestigen — wacht op een omgeving met Neon (DATABASE_URL) en Scaleway-clientopslag
+- [ ] Oude, onversleuteld bewaarde aanvragen opruimen of verzegelen — vraagt een besluit van de eigenaar (en eventueel een migratie)
+- [ ] Beheerlink voor de gast (status van de aanvraag) — vraagt een EXPAND-migratie; nu bevestigt alleen het scherm in de browser

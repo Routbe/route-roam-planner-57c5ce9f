@@ -1007,5 +1007,21 @@
   "booking.seal.retry": "Réessayer",
   "booking.seal.otherHost": "Chiffré : seul l'hôte de cette réservation peut lire les données de l'invité.",
   "booking.seal.opening": "Ouverture des données de l'invité…",
-  "booking.seal.unreadable": "Ces données d'invité n'ont pas pu être ouvertes sur cet appareil."
+  "booking.seal.unreadable": "Ces données d'invité n'ont pas pu être ouvertes sur cet appareil.",
+  "booking.inquiry.heading": "Demandes via votre carte de profil",
+  "booking.inquiry.intro": "Le nom, l'e-mail et le message sont chiffrés pour votre clé de réservation et ne s'ouvrent qu'ici, sur cet appareil. ROUT n'envoie pas d'e-mail à l'invité : répondez vous-même avec le bouton.",
+  "booking.inquiry.empty": "Aucune demande via le court formulaire pour l'instant.",
+  "booking.inquiry.opening": "Ouverture de la demande…",
+  "booking.inquiry.locked": "Chiffré. Ouvrez Studio sur un appareil avec votre clé principale pour lire cette demande.",
+  "booking.inquiry.unreadable": "Cette demande ne s'ouvre pas avec votre clé de réservation actuelle.",
+  "booking.inquiry.missing": "Les données chiffrées de cette demande sont introuvables.",
+  "booking.inquiry.legacy": "Ancienne demande, reçue sans chiffrement",
+  "booking.inquiry.accept": "Accepter",
+  "booking.inquiry.decline": "Refuser",
+  "booking.inquiry.reply": "Répondre à l'invité",
+  "booking.inquiry.replySubject": "Votre demande de rendez-vous du {{date}} à {{time}}",
+  "booking.inquiry.status.pending": "Nouvelle",
+  "booking.inquiry.status.accepted": "Acceptée",
+  "booking.inquiry.status.declined": "Refusée",
+  "booking.inquiry.done": "Enregistré. ROUT n'envoie pas d'e-mail à l'invité ; répondez vous-même si vous le souhaitez."
 }

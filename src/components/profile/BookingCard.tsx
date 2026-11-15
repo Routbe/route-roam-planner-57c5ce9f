@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useState, type CSSProperties } from "react";
-import { CalendarClock, Loader2 } from "lucide-react";
+import { CalendarClock, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -10,7 +10,8 @@ import { getNextBookingSlots } from "@/lib/booking-engine/booking.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Altcha } from "@/components/Altcha";
 import { takeProof } from "@/lib/altcha-client";
-import { requestBooking } from "@/lib/booking.functions";
+import { getProfileBookingKey, requestBooking } from "@/lib/booking.functions";
+import { b64uDecode, b64uEncode } from "@/lib/booking-engine/sealed-booking";
 import {
   BOOKING_MESSAGE_MAX,
   BOOKING_TIME_SLOTS,
@@ -63,30 +64,63 @@ export function BookingCard({
       : `${embedUrl}?embed=true`
     : "";
 
+  const hostKeyFn = useServerFn(getProfileBookingKey);
+  const send = useServerFn(requestBooking);
+
+  /**
+   * Name, e-mail and message are sealed in the crypto worker for the host's
+   * booking key (RVE1, ML-KEM-1024 + X25519); only the envelope leaves the browser.
+   */
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (busy) return;
     setBusy(true);
     try {
-      const res = await requestBooking({
+      const key = await hostKeyFn({ data: { handle } });
+      if (!key.ok) {
+        toast.error(t(key.reason === "unavailable" ? "profile.sealedUnavailable" : "profile.sealedHostKeyMissing"));
+        return;
+      }
+      const publicKey = b64uDecode(key.publicKey);
+      if (!publicKey) {
+        toast.error(t("profile.sealedHostKeyMissing"));
+        return;
+      }
+      const { enclave } = await import("@/lib/crypto-enclave/client");
+      const sealed = await enclave.booking.seal([{ ref: key.ref, publicKey }], {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        ...(message.trim() ? { note: message.trim().slice(0, BOOKING_MESSAGE_MAX) } : {}),
+      });
+      const copy = sealed.hosts[0];
+      if (!copy || copy.ref !== key.ref) throw new Error("seal");
+      const res = await send({
         data: {
           handle,
-          guestName: name.trim(),
-          guestEmail: email.trim(),
           preferredDate: date,
           preferredTime: time,
-          guestMessage: message.trim() || null,
+          sealed: { pid: sealed.payloadId, ref: copy.ref, envelope: b64uEncode(copy.envelope) },
           altcha: await takeProof(),
         },
       });
       if (res.ok) {
         setDone(true);
-        toast.success(res.message);
+        setName("");
+        setEmail("");
+        setMessage("");
+        toast.success(t("profile.sealedSent"));
       } else {
-        toast.error(res.message);
+        toast.error(
+          t(
+            res.reason === "unavailable" ? "profile.sealedUnavailable"
+              : res.reason === "host_key_missing" ? "profile.sealedHostKeyMissing"
+              : res.reason === "past_date" ? "profile.sealedPastDate"
+              : "profile.requestFailed",
+          ),
+        );
       }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("profile.requestFailed"));
+    } catch {
+      toast.error(t("profile.requestFailed"));
     } finally {
       setBusy(false);
     }
@@ -140,7 +174,7 @@ export function BookingCard({
             )
           ) : done ? (
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-900">
-               {t("profile.bookingSent")} </div>
+               {t("profile.sealedSent")} </div>
           ) : (
             <form onSubmit={submit} className="space-y-3">
               {config.note && <p className="text-sm text-muted-foreground">{config.note}</p>}
@@ -221,6 +255,11 @@ export function BookingCard({
                   {message.length}/{BOOKING_MESSAGE_MAX}
                 </p>
               </div>
+
+              <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                {t("profile.sealedHint")}
+              </p>
 
               <Altcha />
 

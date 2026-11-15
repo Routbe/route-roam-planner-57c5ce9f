@@ -1,17 +1,17 @@
 /**
- * Boekingsmotor: aanvraag opslaan in Neon, host per Brevo verwittigen met
- * accept/decline-links, en bij aanvaarding een .ics-uitnodiging naar de gast
- * sturen. Server-only.
+ * Korte aanvraagformulier op profielkaarten: host opzoeken en beslissingen
+ * (accept/decline) verwerken. Nieuwe aanvragen komen alleen nog versleuteld
+ * binnen via booking-engine/inquiry.server.ts; deze module mailt een gast
+ * alleen nog voor oude, vóór de versleuteling bewaarde aanvragen. Server-only.
  */
 import { bookingSigningSecret, checkBookingToken, signBookingToken } from "@/lib/booking-token";
 import { sql } from "@/lib/neon";
 import {
-  sendBookingRequestToHost,
   sendBookingConfirmedToGuest,
   sendBookingDeclinedToGuest,
 } from "@/lib/brevo/client";
+import { isSealedGuestEmail } from "@/lib/booking-engine/sealed-booking";
 import {
-  BOOKING_MESSAGE_MAX,
   buildIcs,
   googleCalendarUrl,
   parseBookingConfig,
@@ -19,10 +19,6 @@ import {
 } from "@/lib/booking";
 
 type Row = Record<string, unknown>;
-
-function siteOrigin(): string {
-  return (process.env["PUBLIC_SITE_URL"] ?? "https://rout.be").replace(/\/$/, "");
-}
 
 /** Signs one action for one request with an expiring HMAC-SHA256 token. */
 export function bookingToken(id: string, action: "accept" | "decline"): string {
@@ -44,7 +40,7 @@ interface HostRow {
 }
 
 /** Zoekt het profiel én de boekingsconfiguratie die de maker zelf instelde. */
-async function hostFor(handle: string): Promise<HostRow | null> {
+export async function hostFor(handle: string): Promise<HostRow | null> {
   const rows = (await sql`
     select p.id, p.username, p.display_name, p.blocks
       from public.profiles p
@@ -66,67 +62,6 @@ async function hostFor(handle: string): Promise<HostRow | null> {
     email: (row["email"] as string | null) ?? null,
     config: parseBookingConfig(String(block["value"] ?? "")),
   };
-}
-
-export interface BookingInput {
-  handle: string;
-  guestName: string;
-  guestEmail: string;
-  preferredDate: string;
-  preferredTime: string;
-  guestMessage?: string | null;
-}
-
-/** Slaat de aanvraag op en verwittigt de host. Werpt nooit door naar de gast. */
-export async function createBookingRequest(
-  input: BookingInput,
-): Promise<{ ok: boolean; message: string }> {
-  const host = await hostFor(input.handle);
-  if (!host) {
-    return { ok: false, message: "Dit profiel neemt momenteel geen afspraken aan." };
-  }
-
-  const message = (input.guestMessage ?? "").slice(0, BOOKING_MESSAGE_MAX) || null;
-  let id: string;
-  try {
-    // The database re-checks that the host shows a booking form (db/0240).
-    const rows = (await sql`
-      select public.rout_booking_request_create(${host.id}::uuid, ${input.guestName}, ${input.guestEmail},
-        ${input.preferredDate}::date, ${input.preferredTime}, ${message}, ${host.config.duration}::int, ${host.config.title}) as id
-    `) as Row[];
-    id = String(rows[0]?.["id"] ?? "");
-  } catch (error) {
-    console.error("[booking] kon de aanvraag niet bewaren", error);
-    return { ok: false, message: "Aanvragen lukte niet. Probeer het later opnieuw." };
-  }
-
-  const base = siteOrigin();
-  const acceptUrl = `${base}/api/public/bookings/${id}/accept?token=${bookingToken(id, "accept")}`;
-  const declineUrl = `${base}/api/public/bookings/${id}/decline?token=${bookingToken(id, "decline")}`;
-
-  if (host.email) {
-    await sendBookingRequestToHost({
-      to: host.email,
-      guestName: input.guestName,
-      guestEmail: input.guestEmail,
-      date: input.preferredDate,
-      time: input.preferredTime,
-      durationMinutes: host.config.duration,
-      message,
-      acceptUrl,
-      declineUrl,
-    });
-  }
-
-  return { ok: true, message: "Je aanvraag is verstuurd. Je hoort snel iets per e-mail." };
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 /** Verwerkt de klik op accepteren/weigeren uit de hostmail. */
@@ -154,6 +89,16 @@ export async function resolveBookingRequest(
     (hostRows[0]?.["display_name"] as string | null) ??
     (hostRows[0]?.["username"] as string | null) ??
     "ROUT";
+
+  // Sealed request: ROUT has no address and no name; the host answers the guest from Studio.
+  if (isSealedGuestEmail(booking["guest_email"])) {
+    return {
+      ok: true,
+      message: action === "accept"
+        ? "Aanvaard. ROUT mailt de gast niet: open je boekingen in Studio om de versleutelde gegevens te lezen en de gast zelf te antwoorden."
+        : "Geweigerd. ROUT mailt de gast niet.",
+    };
+  }
 
   const guestEmail = String(booking["guest_email"]);
   const guestName = String(booking["guest_name"]);

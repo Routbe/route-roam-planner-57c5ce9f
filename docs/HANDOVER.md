@@ -702,3 +702,27 @@ Vervangt het externe dossier "Technisch Overdrachtsdossier: ROUT Sovereign Engin
 - **Gewijzigd:** `src/content/info/bookings{,.en,.fr,.de}.mdx` (FAQ, stappen, limiet per bezoeker, nieuwe secties "Versleutelde gastgegevens" en "Grenzen"); `src/routes/privacy.tsx` + `src/locales/{nl,en,fr,de}.json` (nieuw onderdeel 09 "Afspraken via een boekingspagina", hernummering 10/11, datum november 2026); `src/routes/security.tsx` (rij gastgegevens in de vergelijking, statusoverzicht uit `src/lib/security-status.ts` in nl/en/fr/de + `security-status.test.ts`); `src/locales/studio/*.json` (`booking.rules.perGuestHint`); `src/content/safety/cryptography.mdx` (alleen nl, zoals de pagina bestond); `README.md`; `ENVIRONMENT.md` (`SCALEWAY_CLIENT_BUCKET` draagt ook de sleuteldocumenten).
 - **Bewust ongewijzigd:** `profile.bookingSent` ("je krijgt een e-mail") hoort bij het onversleutelde aanvraagformulier en klopt daar nog; de agenda-pijler "Zero-Knowledge PII" in `privacy-pillars.ts` gaat over gekoppelde agenda's; bestaande Trust Center-teksten en safety-pagina's blijven nl/en of nl.
 - **Open:** juridische nalezing van het nieuwe privacy-onderdeel (grondslagen, bewaartermijnen, verwerkers); aanvraagformulier op profielkaarten versleutelen; fr/de voor de overige Trust Center- en safety-teksten; alle open punten uit de bijlage Fase 1 blijven open.
+
+## Bijlage: profielkaart-aanvragen versleuteld en fr/de-pariteit (2026-11-15 16:15 UTC, geen 100%-attestatie)
+
+Geen SQL-migratie, Neon niet aangeraakt, `CODE_SCHEMA_LEVEL` blijft `"0277"`.
+
+- **Kort aanvraagformulier (profielkaart):**
+  - De browser van de bezoeker vraagt de openbare boekingssleutel van de host op (`getProfileBookingKey`, publiek, geeft alleen `{ ref, publicKey }`) en verzegelt naam, e-mail en bericht in de crypto-worker (`booking.seal`, RVE1 bkh, ML-KEM-1024 + X25519, buckets 1/4/16 KiB).
+  - `requestBooking` aanvaardt alleen `{ handle, preferredDate, preferredTime, sealed: { pid, ref, envelope }, altcha }`; elk plaintextveld (`guestName`, `guestEmail`, `guestMessage`, `name`, `email`, `message`, `note`) geeft `plaintext_refused` (`src/lib/booking-engine/sealed-inquiry.ts`).
+  - `src/lib/booking-engine/inquiry.server.ts` controleert ref en envelopkop tegen de gepubliceerde sleutel, schrijft de envelop naar Scaleway `users/<uid>/inquiries/<pid>.json` (nooit overschrijven) en roept `rout_booking_request_create` aan met plaatshouders (`RVE1`, `<pid>@sealed.invalid`, bericht `null`). Mislukt de database-insert, dan wordt de envelop weer verwijderd.
+  - db/0240 laat geen envelop toe in `booking_requests` (bericht ≤ 500 tekens); daarom staat de envelop naast de hostsleutel in Scaleway.
+  - De host krijgt een mail zonder naam, adres, bericht of reply-to (`sendSealedBookingRequestToHost`); de oude `sendBookingRequestToHost` met gastgegevens is verwijderd.
+  - Studio → Afspraken toont "Aanvragen via je profielkaart" (`src/components/booking/ProfileInquiries.tsx`): openen in de worker (`bookingKey.open`), aanvaarden/weigeren via `resolveMyBookingInquiry` (requireAuth + RLS-eigendomscontrole), antwoorden via de eigen mailapp (mailto).
+  - `resolveBookingRequest` stuurt voor versleutelde aanvragen geen mail naar de gast, ook niet via de oude accept/decline-links.
+  - Bezoeker: bevestiging alleen op het scherm; ROUT kent het adres niet.
+- **Tests:** `src/lib/booking-engine/inquiry-sealed.test.ts` (15): plaintextvelden en oude vorm geweigerd; database, opslag en hostmail bevatten geen naam/adres/bericht; host opent wat bewaard is; envelop van een andere sleutel, verkeerde ref of vermomde plaintext geweigerd zonder database- of opslagschrijf; geen overschrijven; geen hostsleutel → `host_key_missing`; geen gastmail bij aanvaarden/weigeren.
+- **fr/de-pariteit:** Trust Center-teksten in `src/locales/pages/trust.{nl,en,fr,de}.json`; privacypijlers in fr/de (`src/lib/privacy-pillars.ts`); `src/content/safety/cryptography.{en,fr,de}.mdx` naast de nl-versie. Test `src/test/security-translations.test.ts` (8) bewaakt gelijke sleutels, echte vertalingen, gelijke secties/waarschuwingen en de eerlijke grenzen.
+- **Bijgewerkte publieke teksten:** privacyverklaring (onderdeel 09, alinea 3) en /info/bookings in nl/en/fr/de; statuskaart "Versleutelde gastgegevens" op /security in nl/en/fr/de.
+- **Controles (2026-11-15):** `tsgo -b --noEmit` 0 fouten. Volledige `bunx vitest run`: 530 bestanden geslaagd, 1 gefaald, 4 overgeslagen; 3.243 tests geslaagd, 1 gefaald, 9 overgeslagen. De ene fout was `zk-wasm-pin.test.ts` met een time-out (5,9 s tegen 5 s) onder volle belasting; afzonderlijk slaagt die test (2/2). /security en /safety/cryptography in fr en de geladen in een testbrowser zonder fouten.
+- **Niet bewezen / open:**
+  - Geen live aanvraag of boeking getest: de preview heeft geen Neon en geen Scaleway-opslag.
+  - Aanvragen van vóór deze wijziging staan onversleuteld in Neon; opruimen of verzegelen vraagt een besluit van de eigenaar.
+  - Geen beheerlink voor de gast (status) — vraagt een EXPAND-migratie.
+  - Overige safety-pagina's bestaan alleen in het Nederlands.
+  - De server levert de openbare sleutel; dat blijft de gewone grens van versleuteling in een webbrowser.

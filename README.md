@@ -351,7 +351,8 @@ ROUT treats security as architecture, not as a feature. These guarantees are enf
 - `book.server.ts` refuses any request that carries plaintext guest fields (`plaintext_refused`) and checks every envelope header against the host's published key. The database keeps fixed placeholders where db/0218 demands a name and an e-mail.
 - The host's booking key is a document in the Scaleway client bucket (`users/<uid>/booking-key.json`): the public key plus the secret seed sealed with AES-256-GCM under the host's master key. Studio creates and publishes it on a device that holds the master key; only that device opens guest details.
 - Consequences: guests get no confirmation or cancellation e-mail (status and `.ics` are on the confirmation page), Stripe receives no `customer_email`, and the per-guest limit does not apply to sealed bookings.
-- Not covered yet: the short request form on profile cards (`requestBooking`, still plaintext), a guest copy (`bkg`) behind the manage link, hardware-passkey binding of the booking key, and a confirmed live booking. The server supplies the public key, the usual limit of web-delivered encryption.
+- The short request form on profile cards seals name, e-mail and message the same way (`src/components/profile/BookingCard.tsx` → worker op `booking.seal`). `requestBooking` refuses plaintext fields (`plaintext_refused`, `src/lib/booking-engine/sealed-inquiry.ts`); `inquiry.server.ts` checks the envelope against the host's key, stores it in the client bucket at `users/<uid>/inquiries/<pid>.json` and writes only placeholders through `rout_booking_request_create`. The host mail carries no guest data; the host opens, accepts or declines and replies (mailto) in Studio. ROUT sends no mail to the guest of a sealed request. Requests stored before this change stay plaintext in Neon.
+- Not covered yet: a guest copy (`bkg`) behind the manage link, hardware-passkey binding of the booking key, and a confirmed live booking. The server supplies the public key, the usual limit of web-delivered encryption.
 
 ### Server-function guards
 - Every `createServerFn` export uses `requireAuth`, `requireDeveloperAccess` or `optionalAuth`, or is listed in `PUBLIC_SERVER_FNS`. `src/test/server-fn-auth-guard.test.ts` fails for any new unguarded function and for stale list entries. Route gates under `_authenticated` only hide UI.
@@ -665,7 +666,7 @@ These items are referenced in the code or docs but not yet present in the reposi
 
 - [x] `vercel.json` and the `build:vercel` script (a real Vercel build from this tree is not yet confirmed).
 - [ ] The `db:check` and `release:check` package scripts. Use the direct `bun scripts/...` commands above.
-- [ ] Sealed bookings: live end-to-end booking, guest copy (`bkg`, needs an EXPAND migration), per-guest limit without e-mail, hardware-passkey binding, and sealing the profile-card request form.
+- [ ] Sealed bookings: live end-to-end booking, guest copy (`bkg`, needs an EXPAND migration), per-guest limit without e-mail, and hardware-passkey binding. (The profile-card request form is sealed since 2026-11-15; a live request is not yet confirmed.)
 - [ ] `public/sw.js`: `src/lib/pwa.ts` registers a service worker, but the file is not checked in, so there is no offline support yet.
 - [ ] `worker/bun.lock`: `worker/Dockerfile` copies it with `--frozen-lockfile`. Run `bun install --cwd worker` once and commit the lockfile before building the image.
 

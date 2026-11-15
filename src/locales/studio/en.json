@@ -1007,5 +1007,21 @@
   "booking.seal.retry": "Try again",
   "booking.seal.otherHost": "Encrypted: only the host of this booking can read the guest's details.",
   "booking.seal.opening": "Opening guest details…",
-  "booking.seal.unreadable": "These guest details couldn't be opened on this device."
+  "booking.seal.unreadable": "These guest details couldn't be opened on this device.",
+  "booking.inquiry.heading": "Requests from your profile card",
+  "booking.inquiry.intro": "Name, email and message are encrypted for your booking key and are opened only here, on this device. ROUT does not email the guest: reply yourself with the button.",
+  "booking.inquiry.empty": "No requests through the short form yet.",
+  "booking.inquiry.opening": "Opening request…",
+  "booking.inquiry.locked": "Encrypted. Open Studio on a device with your master key to read this request.",
+  "booking.inquiry.unreadable": "This request does not open with your current booking key.",
+  "booking.inquiry.missing": "The encrypted details of this request were not found.",
+  "booking.inquiry.legacy": "Older request, received unencrypted",
+  "booking.inquiry.accept": "Accept",
+  "booking.inquiry.decline": "Decline",
+  "booking.inquiry.reply": "Reply to guest",
+  "booking.inquiry.replySubject": "Your appointment request for {{date}} at {{time}}",
+  "booking.inquiry.status.pending": "New",
+  "booking.inquiry.status.accepted": "Accepted",
+  "booking.inquiry.status.declined": "Declined",
+  "booking.inquiry.done": "Saved. ROUT does not email the guest; reply yourself if you want to."
 }

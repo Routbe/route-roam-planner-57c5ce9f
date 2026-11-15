@@ -2019,6 +2019,11 @@
   "privacy.section.bookings.p1": "Boek je via de boekingspagina van een ROUT-gebruiker een afspraak, dan worden je naam, e-mailadres, notitie en antwoorden in je browser versleuteld voor de sleutel van de host. ROUT bewaart alleen die versleutelde tekst en kan ze niet lezen. Alleen de host opent ze, op zijn eigen toestel.",
   "privacy.section.bookings.p2.strong": "Wat we wel verwerken:",
   "privacy.section.bookings.p2.text": "het gekozen tijdstip, het afspraaktype, je tijdzone, de status van de afspraak, de betaalstatus en technische gegevens zoals je IP-adres, om de afspraak te plannen en de dienst te beveiligen. ROUT stuurt je geen bevestigingsmail, omdat we je e-mailadres niet kennen. Bij een betaalde afspraak geven we geen e-mailadres door: de betaaldienst Stripe vraagt dat zelf en verwerkt het onder haar eigen privacyverklaring.",
-  "privacy.section.bookings.p3.strong": "Uitzondering:",
-  "privacy.section.bookings.p3.text": "het korte aanvraagformulier op een profielkaart verstuurt naam, e-mailadres en bericht nog onversleuteld. Die gegevens gebruiken we om de aanvraag bij de host te bezorgen en je het antwoord te mailen."
+  "privacy.section.bookings.p3.strong": "Kort aanvraagformulier:",
+  "privacy.section.bookings.p3.text": "ook het korte aanvraagformulier op een profielkaart versleutelt naam, e-mailadres en bericht in je browser voor de sleutel van de host. ROUT bewaart die versleutelde tekst in zijn Europese opslag (Scaleway, Parijs), ziet alleen de gewenste datum en tijd, en mailt je niet. Aanvragen die vóór november 2026 werden verstuurd, bleven onversleuteld bewaard zoals ze toen binnenkwamen.",
+  "profile.sealedHint": "Je naam, e-mailadres en bericht worden in je browser versleuteld. Alleen de host kan ze lezen, ROUT niet.",
+  "profile.sealedSent": "Je aanvraag is versleuteld verstuurd. ROUT stuurt je geen e-mail, want we kennen je adres niet: de host leest je gegevens op het eigen toestel en neemt zelf contact met je op.",
+  "profile.sealedHostKeyMissing": "Dit profiel kan nog geen versleutelde aanvragen ontvangen. Probeer het later opnieuw.",
+  "profile.sealedUnavailable": "Dit profiel neemt momenteel geen afspraken aan.",
+  "profile.sealedPastDate": "Kies een datum in de toekomst."
 }

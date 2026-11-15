@@ -1007,5 +1007,21 @@
   "booking.seal.retry": "Opnieuw proberen",
   "booking.seal.otherHost": "Versleuteld: alleen de host van deze boeking kan de gastgegevens lezen.",
   "booking.seal.opening": "Gastgegevens openen…",
-  "booking.seal.unreadable": "Deze gastgegevens konden op dit toestel niet worden geopend."
+  "booking.seal.unreadable": "Deze gastgegevens konden op dit toestel niet worden geopend.",
+  "booking.inquiry.heading": "Aanvragen via je profielkaart",
+  "booking.inquiry.intro": "Naam, e-mail en bericht zijn versleuteld voor je boekingssleutel en worden alleen hier, op dit toestel, geopend. ROUT mailt de gast niet: antwoord zelf via de knop.",
+  "booking.inquiry.empty": "Nog geen aanvragen via het korte formulier.",
+  "booking.inquiry.opening": "Aanvraag openen…",
+  "booking.inquiry.locked": "Versleuteld. Open Studio op een toestel met je hoofdsleutel om deze aanvraag te lezen.",
+  "booking.inquiry.unreadable": "Deze aanvraag opent niet met je huidige boekingssleutel.",
+  "booking.inquiry.missing": "De versleutelde gegevens van deze aanvraag zijn niet gevonden.",
+  "booking.inquiry.legacy": "Oude aanvraag, nog onversleuteld ontvangen",
+  "booking.inquiry.accept": "Aanvaarden",
+  "booking.inquiry.decline": "Weigeren",
+  "booking.inquiry.reply": "Gast antwoorden",
+  "booking.inquiry.replySubject": "Je afspraakaanvraag van {{date}} om {{time}}",
+  "booking.inquiry.status.pending": "Nieuw",
+  "booking.inquiry.status.accepted": "Aanvaard",
+  "booking.inquiry.status.declined": "Geweigerd",
+  "booking.inquiry.done": "Opgeslagen. ROUT mailt de gast niet; antwoord zelf als je dat wilt."
 }

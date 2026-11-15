@@ -34,6 +34,7 @@ const PUBLIC_SERVER_FNS = new Set([
   "src/lib/booking-engine/booking.functions.ts#getPublicSlots",
   "src/lib/booking-engine/booking.functions.ts#holdBookingSlot",
   "src/lib/booking-engine/booking.functions.ts#releaseBookingSlot",
+  "src/lib/booking.functions.ts#getProfileBookingKey",
   "src/lib/booking.functions.ts#requestBooking",
   "src/lib/bootstrap.functions.ts#checkHandleAvailability",
   "src/lib/bootstrap.functions.ts#getBootstrapState",

@@ -2019,6 +2019,11 @@
   "privacy.section.bookings.p1": "When you book a meeting through a ROUT member's booking page, your name, email address, note and answers are encrypted in your browser for the host's key. ROUT only stores that encrypted text and cannot read it. Only the host opens it, on their own device.",
   "privacy.section.bookings.p2.strong": "What we do process:",
   "privacy.section.bookings.p2.text": "the chosen time, the meeting type, your time zone, the meeting status, the payment status and technical data such as your IP address, to schedule the meeting and keep the service secure. ROUT does not send you a confirmation email, because we do not know your email address. For a paid meeting we pass on no email address: the payment service Stripe asks for it itself and processes it under its own privacy policy.",
-  "privacy.section.bookings.p3.strong": "Exception:",
-  "privacy.section.bookings.p3.text": "the short request form on a profile card still sends name, email address and message unencrypted. We use those details to deliver the request to the host and to email you the answer."
+  "privacy.section.bookings.p3.strong": "Short request form:",
+  "privacy.section.bookings.p3.text": "the short request form on a profile card also encrypts name, email address and message in your browser for the host's key. ROUT stores that encrypted text in its European storage (Scaleway, Paris), sees only the preferred date and time, and does not email you. Requests sent before November 2026 remain stored unencrypted, as they arrived.",
+  "profile.sealedHint": "Your name, email address and message are encrypted in your browser. Only the host can read them, not ROUT.",
+  "profile.sealedSent": "Your request was sent encrypted. ROUT will not email you, because we do not know your address: the host reads your details on their own device and contacts you directly.",
+  "profile.sealedHostKeyMissing": "This profile cannot receive encrypted requests yet. Please try again later.",
+  "profile.sealedUnavailable": "This profile is not accepting appointments right now.",
+  "profile.sealedPastDate": "Pick a date in the future."
 }

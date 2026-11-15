@@ -120,48 +120,33 @@ export function sendAliasLinked(opts: {
   });
 }
 
-/** Nieuwe boeking → melding naar de host met accept/decline-links. */
-export function sendBookingRequestToHost(opts: {
+/**
+ * Versleutelde aanvraag via het korte formulier → melding zonder gastgegevens.
+ * Geen naam, e-mail, bericht of reply-to: de host leest de aanvraag in Studio.
+ */
+export function sendSealedBookingRequestToHost(opts: {
   to: string;
   language?: string | null;
-  guestName: string;
-  guestEmail: string;
   date: string;
   time: string;
   durationMinutes: number;
-  message?: string | null;
-  acceptUrl: string;
-  declineUrl: string;
+  studioUrl: string;
 }) {
   return dispatchBrevo("BOOKING_HOST_REQUEST", {
     to: opts.to,
     language: opts.language,
-    subject: `Nieuwe afspraakaanvraag van ${opts.guestName}`,
-    replyTo: { email: opts.guestEmail, name: opts.guestName },
-    params: {
-      GUEST_NAME: opts.guestName,
-      GUEST_EMAIL: opts.guestEmail,
-      DATE: opts.date,
-      TIME: opts.time,
-      DURATION: opts.durationMinutes,
-      ACCEPT_URL: opts.acceptUrl,
-      DECLINE_URL: opts.declineUrl,
-    },
+    subject: "Nieuwe versleutelde afspraakaanvraag",
+    params: { DATE: opts.date, TIME: opts.time, DURATION: opts.durationMinutes, STUDIO_URL: opts.studioUrl },
     html: shell(
       `<p>Je kreeg een nieuwe afspraakaanvraag via je ROUT-profiel.</p>
        <ul>
-         <li><strong>Naam:</strong> ${escapeHtml(opts.guestName)}</li>
-         <li><strong>E-mail:</strong> ${escapeHtml(opts.guestEmail)}</li>
-         <li><strong>Datum:</strong> ${escapeHtml(opts.date)} om ${escapeHtml(opts.time)}</li>
+         <li><strong>Gewenst:</strong> ${escapeHtml(opts.date)} om ${escapeHtml(opts.time)}</li>
          <li><strong>Duur:</strong> ${opts.durationMinutes} min</li>
        </ul>
-       ${opts.message ? `<p><strong>Bericht:</strong><br>${escapeHtml(opts.message)}</p>` : ""}
-       <p><a href="${opts.acceptUrl}">✅ Aanvaarden</a> &nbsp;·&nbsp;
-          <a href="${opts.declineUrl}">❌ Weigeren</a></p>`,
+       <p>Naam, e-mailadres en bericht van de gast zijn in diens browser versleuteld voor jouw boekingssleutel.
+          ROUT kan ze niet lezen en zet ze daarom niet in deze mail.</p>
+       <p><a href="${opts.studioUrl}">Open je boekingen in Studio</a> om de aanvraag te lezen en te aanvaarden of te weigeren.</p>`,
     ),
-    text:
-      `Nieuwe afspraakaanvraag van ${opts.guestName} (${opts.guestEmail}) op ` +
-      `${opts.date} ${opts.time}.\nAanvaarden: ${opts.acceptUrl}\nWeigeren: ${opts.declineUrl}`,
   });
 }
 
