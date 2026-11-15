@@ -1,6 +1,7 @@
 /** Guest confirmation mail with a .ics attachment. Never throws, never blocks the booking. */
 import { sql } from "@/lib/neon";
 import { buildIcs } from "./ics";
+import { isSealedGuestEmail } from "./sealed-booking";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
@@ -12,6 +13,8 @@ export async function sendBookingInvite(bookingId: string, method: "REQUEST" | "
       join public.users u on u.id = b.host_user_id where b.id = ${bookingId}::uuid`) as Record<string, string | number>[];
     const r = rows[0];
     if (!r) return false;
+    // Sealed bookings (Fase 1): ROUT does not know the guest's address, so no guest mail is sent.
+    if (isSealedGuestEmail(r["guest_email"])) return false;
     const start = new Date(String(r["start_utc"]));
     const end = new Date(String(r["end_utc"]));
     const location = r["location_value"] ? String(r["location_value"]) : undefined;

@@ -1,5 +1,9 @@
 import { sql, withDbContext } from "@/lib/neon";
 import { guestView } from "./public.server";
+import { isSealedGuestEmail } from "./sealed-booking";
+
+/** Sealed bookings (Fase 1) carry placeholders, never the guest's details: report them as absent. */
+const guestOf = (name: unknown, email: unknown) => (isSealedGuestEmail(email) ? { guest_name: null, guest_email: null } : { guest_name: name, guest_email: email });
 
 /**
  * One authorization boundary for the detail API: identity never comes from
@@ -19,7 +23,7 @@ export async function readBookingDetails(id: string, token: string | null, userI
     const host = Boolean(b && (b["workspace_id"] ? b["workspace_admin"] === true || b["host_user_id"] === userId : b["host_user_id"] === userId));
     if (b && host) {
       return { forbidden: false as const, id: b["id"], status: b["status"], start_at: b["start_utc"], end_at: b["end_utc"],
-        host_name: b["host_name"] ?? null, guest_name: b["guest_name"], guest_email: b["guest_email"],
+        host_name: b["host_name"] ?? null, ...guestOf(b["guest_name"], b["guest_email"]),
         meeting_notes: b["guest_note"] ?? null, location: b["location_value"] ?? null, title: b["title"] };
     }
   }
@@ -27,6 +31,6 @@ export async function readBookingDetails(id: string, token: string | null, userI
   if (!v) return null;
   if (v.masked) return { forbidden: true as const };
   return { forbidden: false as const, id: v.id, status: v.status, start_at: v.startUtc, end_at: v.endUtc,
-    host_name: v.hostName ?? null, guest_name: v.guestName, guest_email: v.guestEmail,
+    host_name: v.hostName ?? null, ...guestOf(v.guestName, v.guestEmail),
     meeting_notes: null, location: v.locationValue ?? null, title: v.title };
 }

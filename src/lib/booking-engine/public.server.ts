@@ -6,6 +6,7 @@ import { sql, withDbContext } from "@/lib/neon";
 import type { EventTypeRules } from "./types";
 import { intakeFields } from "./intake";
 import { mergeHostStarts, type HostConstraint, type HostDay } from "./slot-rules";
+import { isSealedGuestEmail } from "./sealed-booking";
 
 type PublicEventTypeRow = {
   id: string; title: string; description: string | null; durationMinutes: number; priceCents: number | null;
@@ -139,7 +140,9 @@ export async function bookingSummary(id: string, token?: string | null) {
   return {
     id: v.id, status: v.status, title: v.title,
     startUtc: new Date(v.startUtc).toISOString(), endUtc: new Date(v.endUtc).toISOString(),
-    locationKind: v.locationKind, masked: false as const, guestName: v.guestName,
+    locationKind: v.locationKind, masked: false as const,
+    // Sealed bookings (Fase 1) store a placeholder, never the guest's name.
+    guestName: isSealedGuestEmail(v.guestEmail) ? null : v.guestName,
     guestTimezone: v.guestTimezone, locationValue: v.locationValue ?? null,
   };
 }
