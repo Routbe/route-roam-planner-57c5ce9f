@@ -17,6 +17,7 @@ import {
 } from "@/lib/booking-engine/booking.functions";
 import type { IntakeField } from "@/lib/booking-engine/intake";
 import { BookingKeyBanner, SealedGuestDetails, useHostBookingKey, useOpenedGuestDetails } from "@/components/booking/SealedBookingDetails";
+import { ProfileInquiries } from "@/components/booking/ProfileInquiries";
 
 type Studio = Extract<Awaited<ReturnType<typeof getBookingStudio>>, { ready: true }>;
 type EventType = Studio["eventTypes"][number];
@@ -117,7 +118,8 @@ function Requests({ data }: { data: Studio }) {
   const key = useHostBookingKey(data.userId);
   const sealedOpen = useOpenedGuestDetails(data.userId, key.state, data.bookings);
   const banner = <BookingKeyBanner state={key.state} onRetry={key.retry} onReplace={key.replace} />;
-  if (data.bookings.length === 0) return <div className="space-y-3">{banner}<Panel><p className="text-sm text-muted-foreground">{t("booking.empty.requests")}</p></Panel></div>;
+  const inquiries = <ProfileInquiries userId={data.userId} keyDoc={key.state.kind === "ready" ? key.state.doc : null} />;
+  if (data.bookings.length === 0) return <div className="space-y-3">{banner}<Panel><p className="text-sm text-muted-foreground">{t("booking.empty.requests")}</p></Panel>{inquiries}</div>;
   const fmt = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
   return (
     <div className="space-y-3">
@@ -161,6 +163,7 @@ function Requests({ data }: { data: Studio }) {
           </div>
         </Panel>
       ))}
+      {inquiries}
     </div>
   );
 }
