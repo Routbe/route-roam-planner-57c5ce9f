@@ -67,6 +67,7 @@ function PrivacyPage() {
     { id: "domains", label: t("privacy.chip.domains") },
     { id: "api", label: t("privacy.chip.api") },
     { id: "payments", label: t("privacy.chip.payments") },
+    { id: "bookings", label: t("privacy.chip.bookings") },
     { id: "hosting", label: t("privacy.chip.hosting") },
     { id: "rights", label: t("privacy.chip.rights") },
   ];
@@ -270,8 +271,26 @@ function PrivacyPage() {
           ),
         },
         {
+          id: "bookings",
+          heading: numbered("09", t("privacy.section.bookings.heading")),
+          wrapperClassName: sectionWrapper,
+          body: (
+            <>
+              <p className={bodyText}>{t("privacy.section.bookings.p1")}</p>
+              <p className={bodyText}>
+                <span className={strong}>{t("privacy.section.bookings.p2.strong")}</span>{" "}
+                {t("privacy.section.bookings.p2.text")}
+              </p>
+              <p className={bodyText}>
+                <span className={strong}>{t("privacy.section.bookings.p3.strong")}</span>{" "}
+                {t("privacy.section.bookings.p3.text")}
+              </p>
+            </>
+          ),
+        },
+        {
           id: "hosting",
-          heading: numbered("09", t("privacy.section.hosting.heading")),
+          heading: numbered("10", t("privacy.section.hosting.heading")),
           wrapperClassName: sectionWrapper,
           body: (
             <>
@@ -289,7 +308,7 @@ function PrivacyPage() {
         },
         {
           id: "rights",
-          heading: numbered("10", t("privacy.section.rights.heading")),
+          heading: numbered("11", t("privacy.section.rights.heading")),
           wrapperClassName: "scroll-mt-24",
           body: (
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
