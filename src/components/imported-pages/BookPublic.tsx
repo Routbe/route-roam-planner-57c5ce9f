@@ -306,6 +306,7 @@ export default function BookPublic({ eventTypeId, selectedStart, initial }: { ev
             <div className="space-y-1.5"><Label htmlFor="bk-email">{t("booking.public.email")}</Label><Input id="bk-email" required type="email" maxLength={254} autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             <div className="space-y-1.5"><Label htmlFor="bk-note">{t("booking.public.note")}</Label><Textarea id="bk-note" maxLength={2000} rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></div>
             <IntakeForm fields={et.customFields} answers={answers} onChange={setAnswers} />
+            <p className="flex items-start gap-2 text-xs text-muted-foreground"><Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />{t("booking.public.sealedNote")}</p>
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={sending}>
               {sending && <Loader2 className="h-4 w-4 animate-spin" />}
