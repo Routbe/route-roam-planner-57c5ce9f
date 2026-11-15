@@ -59,7 +59,7 @@ A group session has a fixed number of seats: several people book the same time u
 ## Limits
 
 - The host's public key comes from our server. As with any encryption in a web browser, you trust the server to deliver the right key.
-- The short request form on a profile card (a preferred date and time, without fixed slots) is not covered yet: those requests are still sent unencrypted.
+- The short request form on a profile card (a preferred date and time, without fixed slots) also encrypts name, email and message in the browser. You read those requests in Studio under **Requests**; ROUT does not email the guest, so you reply yourself. Requests from before November 2026 were stored unencrypted.
 - Guests cannot yet see their own details again through their link.
 - Required questions are checked in the guest's browser; the server cannot read the encrypted answers.
 - A real booking on the live site with this encryption has not been confirmed yet.

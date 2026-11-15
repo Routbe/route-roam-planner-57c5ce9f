@@ -59,7 +59,7 @@ Ein Gruppentermin hat eine feste Platzzahl: Mehrere Personen buchen dieselbe Zei
 ## Grenzen
 
 - Der öffentliche Schlüssel des Gastgebers kommt von unserem Server. Wie bei jeder Verschlüsselung im Webbrowser vertraust du darauf, dass der Server den richtigen Schlüssel liefert.
-- Das kurze Anfrageformular auf einer Profilkarte (Wunschdatum und -uhrzeit, ohne feste Zeitfenster) ist noch nicht abgedeckt: Diese Anfragen werden noch unverschlüsselt gesendet.
+- Auch das kurze Anfrageformular auf einer Profilkarte (Wunschdatum und -uhrzeit, ohne feste Zeitfenster) verschlüsselt Name, E-Mail und Nachricht im Browser. Du liest diese Anfragen in Studio unter **Anfragen**; ROUT schreibt dem Gast keine E-Mail, du antwortest also selbst. Anfragen von vor November 2026 wurden unverschlüsselt gespeichert.
 - Gäste können ihre eigenen Angaben über ihren Link noch nicht wieder einsehen.
 - Pflichtfragen werden im Browser des Gastes geprüft; der Server kann die verschlüsselten Antworten nicht lesen.
 - Eine echte Buchung auf der Live-Website mit dieser Verschlüsselung ist noch nicht bestätigt.
