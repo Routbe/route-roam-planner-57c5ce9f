@@ -276,4 +276,4 @@ Every value below is server-only, never `VITE_`-prefixed, and must stay identica
 ## Omni media worker (worker/, separate host)
 - `OMNI_DATABASE_URL`, `OMNI_APP_ORIGIN`, `OMNI_EVENTS_URL`, `OMNI_REALTIME_SECRET`, `OMNI_RENDER_HOSTS`, `CHROMIUM_PATH`, `HOST`, `PORT` — read only by the worker daemon (see `worker/README.md`), never by the web app.
 
-Storage names are exactly those in "File storage (Scaleway)" above (`SCALEWAY_DEFAULT_BUCKET`, `SCALEWAY_CLIENT_BUCKET`, `SCALEWAY_INTERNAL_BUCKET`); a variable named `SCALEWAY_BUCKET` is not read by any code. Without storage credentials `/@handle/prekey-bundle.json` answers 404 `not_available`.
+Storage names are exactly those in "File storage (Scaleway)" above (`SCALEWAY_DEFAULT_BUCKET`, `SCALEWAY_CLIENT_BUCKET`, `SCALEWAY_INTERNAL_BUCKET`); a variable named `SCALEWAY_BUCKET` is not read by any code. Without client-bucket credentials `/@handle/prekey-bundle.json` answers 503 `storage_unavailable` (no-store); a configured bucket without a published document answers 404 `not_available`.
