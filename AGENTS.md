@@ -109,9 +109,6 @@ use the editor.
 ## Server function guards
 - createServerFn exports need requireAuth/requireDeveloperAccess/optionalAuth or an entry in PUBLIC_SERVER_FNS (src/test/server-fn-auth-guard.test.ts). Why: route gates only hide UI.
 
-## Public security claims
-- Public copy states only what a test, report or HANDOVER entry in the repo shows, with its scope and open limits; the Trust Center status list lives in src/lib/security-status.ts (same items and levels in nl/en/fr/de, guarded by its test). Why: building blocks and statistical measurements must not read as live guarantees.
-
 <!-- AGENT-MEMORY:BEGIN -->
 ## One-file migration rollout
 - A GO for a single migration is applied from chat with scripts/migration-rollout.ts: the exact db/ file text travels as one parameter, runs only if its SHA-256 equals the file checksum and its predecessor is recorded, and is recorded with the definer guard in the same transaction (dry run: src/test/migration-rollout.test.ts). Why: the Neon connection stays unlinked, so migrate-gateway.ts cannot run, and a retyped or hand-split file must never diverge from db/.
