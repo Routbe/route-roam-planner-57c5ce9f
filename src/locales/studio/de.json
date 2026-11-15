@@ -969,7 +969,7 @@
   "booking.rules.perWeek": "Max. pro Woche",
   "booking.rules.perMonth": "Max. pro Monat",
   "booking.rules.perGuest": "Max. pro Gast",
-  "booking.rules.perGuestHint": "Kommende Termine pro E-Mail-Adresse.",
+  "booking.rules.perGuestHint": "Kommende Termine pro E-Mail-Adresse. Gilt nicht für verschlüsselte Buchungen: Dort kennt ROUT die E-Mail-Adresse nicht.",
   "booking.rules.businessDays": "Zeitfenster in Werktagen",
   "booking.rules.businessDaysHint": "Nur die kommenden Werktage (Mo–Fr) öffnen, zum Beispiel 10 Werktage.",
   "booking.rules.businessDaysCount": "Anzahl Werktage",

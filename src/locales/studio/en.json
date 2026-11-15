@@ -969,7 +969,7 @@
   "booking.rules.perWeek": "Max. per week",
   "booking.rules.perMonth": "Max. per month",
   "booking.rules.perGuest": "Max. per guest",
-  "booking.rules.perGuestHint": "Upcoming appointments per email address.",
+  "booking.rules.perGuestHint": "Upcoming appointments per email address. Does not apply to encrypted bookings: ROUT does not know the email address there.",
   "booking.rules.businessDays": "Window in business days",
   "booking.rules.businessDaysHint": "Only open the coming business days (Mon–Fri), for example 10 business days.",
   "booking.rules.businessDaysCount": "Number of business days",

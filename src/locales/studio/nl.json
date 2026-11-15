@@ -969,7 +969,7 @@
   "booking.rules.perWeek": "Max. per week",
   "booking.rules.perMonth": "Max. per maand",
   "booking.rules.perGuest": "Max. per gast",
-  "booking.rules.perGuestHint": "Komende afspraken per e-mailadres.",
+  "booking.rules.perGuestHint": "Komende afspraken per e-mailadres. Geldt niet voor versleutelde boekingen: daar kent ROUT het e-mailadres niet.",
   "booking.rules.businessDays": "Venster in werkdagen",
   "booking.rules.businessDaysHint": "Alleen de komende werkdagen (ma–vr) openzetten, bijvoorbeeld 10 werkdagen.",
   "booking.rules.businessDaysCount": "Aantal werkdagen",

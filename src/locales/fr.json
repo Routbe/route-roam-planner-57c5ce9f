@@ -992,7 +992,7 @@
   "privacy.section.static.body": "Les QR codes statiques sont compilés et générés entièrement côté client, dans le bac à sable local de votre navigateur. Le contenu des payloads — URL, vCards, clés Wi-Fi, chaînes IBAN — n'atteint jamais les serveurs de ROUT, n'est jamais intercepté et ne génère aucun journal serveur ni télémétrie résiduelle. Rien n'est envoyé, il n'y a donc rien pour nous à stocker, divulguer ou perdre.",
   "privacy.section.static.heading": "QR codes statiques — architecture zéro-donnée absolue",
   "privacy.title": "Politique de confidentialité",
-  "privacy.updated": "Dernière mise à jour : août 2026 · Conforme RGPD / AVG",
+  "privacy.updated": "Dernière mise à jour : novembre 2026 · Conforme RGPD / AVG",
   "profile.agenda": "Événements",
   "profile.anonymousPlaceholder": "Envoyez-moi un message ou une question anonyme…",
   "profile.anonymousQuestion": "Question anonyme",
@@ -2013,5 +2013,12 @@
   "cardScan.limitedText": "Réessaie dans quelques minutes.",
   "cardScan.pInvalid": "invalide",
   "cardScan.invalidTitle": "Pas authentique",
-  "cardScan.invalidText": "Ce code est invalide. La carte peut être contrefaite ou copiée."
+  "cardScan.invalidText": "Ce code est invalide. La carte peut être contrefaite ou copiée.",
+  "privacy.chip.bookings": "Rendez-vous",
+  "privacy.section.bookings.heading": "Rendez-vous via une page de réservation",
+  "privacy.section.bookings.p1": "Lorsque vous réservez un rendez-vous via la page de réservation d'un membre ROUT, votre nom, votre adresse e-mail, votre note et vos réponses sont chiffrés dans votre navigateur pour la clé de l'hôte. ROUT ne conserve que ce texte chiffré et ne peut pas le lire. Seul l'hôte l'ouvre, sur son propre appareil.",
+  "privacy.section.bookings.p2.strong": "Ce que nous traitons :",
+  "privacy.section.bookings.p2.text": "l'heure choisie, le type de rendez-vous, votre fuseau horaire, le statut du rendez-vous, le statut du paiement et des données techniques comme votre adresse IP, pour planifier le rendez-vous et sécuriser le service. ROUT ne vous envoie pas d'e-mail de confirmation, car nous ne connaissons pas votre adresse e-mail. Pour un rendez-vous payant, nous ne transmettons aucune adresse e-mail : le service de paiement Stripe la demande lui-même et la traite selon sa propre politique de confidentialité.",
+  "privacy.section.bookings.p3.strong": "Exception :",
+  "privacy.section.bookings.p3.text": "le court formulaire de demande sur une carte de profil envoie encore le nom, l'adresse e-mail et le message sans chiffrement. Nous utilisons ces données pour transmettre la demande à l'hôte et vous envoyer la réponse par e-mail."
 }

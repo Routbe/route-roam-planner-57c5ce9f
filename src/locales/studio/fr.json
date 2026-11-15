@@ -969,7 +969,7 @@
   "booking.rules.perWeek": "Max. par semaine",
   "booking.rules.perMonth": "Max. par mois",
   "booking.rules.perGuest": "Max. par invité",
-  "booking.rules.perGuestHint": "Rendez-vous à venir par adresse e-mail.",
+  "booking.rules.perGuestHint": "Rendez-vous à venir par adresse e-mail. Ne s'applique pas aux réservations chiffrées : ROUT n'y connaît pas l'adresse e-mail.",
   "booking.rules.businessDays": "Fenêtre en jours ouvrables",
   "booking.rules.businessDaysHint": "N'ouvrir que les prochains jours ouvrables (lun–ven), par exemple 10 jours ouvrables.",
   "booking.rules.businessDaysCount": "Nombre de jours ouvrables",

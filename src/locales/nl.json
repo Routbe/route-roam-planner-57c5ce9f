@@ -992,7 +992,7 @@
   "privacy.section.static.body": "Statische QR-codes worden volledig client-side samengesteld en gegenereerd, binnen de lokale sandbox van je browser. Payload-inhoud — URL's, vCards, wifi-sleutels, IBAN-reeksen — bereikt nooit de servers van ROUT, wordt nooit onderschept en genereert geen enkele serverlog of resterende telemetrie. Er wordt niets geüpload, dus er is niets voor ons om op te slaan, vrij te geven of te verliezen.",
   "privacy.section.static.heading": "Statische QR-codes — absolute zero-data architectuur",
   "privacy.title": "Privacybeleid",
-  "privacy.updated": "Laatst bijgewerkt: augustus 2026 · AVG/GDPR-conform",
+  "privacy.updated": "Laatst bijgewerkt: november 2026 · AVG/GDPR-conform",
   "profile.agenda": "Agenda",
   "profile.anonymousPlaceholder": "Stuur mij anoniem een bericht of vraag…",
   "profile.anonymousQuestion": "Anonieme vraag",
@@ -2013,5 +2013,12 @@
   "cardScan.limitedText": "Probeer het over enkele minuten opnieuw.",
   "cardScan.pInvalid": "ongeldig",
   "cardScan.invalidTitle": "Niet echt",
-  "cardScan.invalidText": "Deze code is ongeldig. De kaart kan nagemaakt of gekopieerd zijn."
+  "cardScan.invalidText": "Deze code is ongeldig. De kaart kan nagemaakt of gekopieerd zijn.",
+  "privacy.chip.bookings": "Afspraken",
+  "privacy.section.bookings.heading": "Afspraken via een boekingspagina",
+  "privacy.section.bookings.p1": "Boek je via de boekingspagina van een ROUT-gebruiker een afspraak, dan worden je naam, e-mailadres, notitie en antwoorden in je browser versleuteld voor de sleutel van de host. ROUT bewaart alleen die versleutelde tekst en kan ze niet lezen. Alleen de host opent ze, op zijn eigen toestel.",
+  "privacy.section.bookings.p2.strong": "Wat we wel verwerken:",
+  "privacy.section.bookings.p2.text": "het gekozen tijdstip, het afspraaktype, je tijdzone, de status van de afspraak, de betaalstatus en technische gegevens zoals je IP-adres, om de afspraak te plannen en de dienst te beveiligen. ROUT stuurt je geen bevestigingsmail, omdat we je e-mailadres niet kennen. Bij een betaalde afspraak geven we geen e-mailadres door: de betaaldienst Stripe vraagt dat zelf en verwerkt het onder haar eigen privacyverklaring.",
+  "privacy.section.bookings.p3.strong": "Uitzondering:",
+  "privacy.section.bookings.p3.text": "het korte aanvraagformulier op een profielkaart verstuurt naam, e-mailadres en bericht nog onversleuteld. Die gegevens gebruiken we om de aanvraag bij de host te bezorgen en je het antwoord te mailen."
 }
