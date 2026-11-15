@@ -1,4 +1,4 @@
--- Rollback of db-pending/0276_tenant_column_expand.sql: restores 0275, except that public_profiles and
+-- Rollback of db/0276_tenant_column_expand.sql: restores 0275, except that public_profiles and
 -- profile_handles keep security_invoker (Neon already ran them that way before 0276). Idempotent.
 -- Refuses while a pending invite names a member by id alone (its address was never stored).
 do $rb$

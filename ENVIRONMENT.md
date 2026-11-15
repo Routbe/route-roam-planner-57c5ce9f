@@ -2,11 +2,11 @@
 
 ## Deploy to Vercel (GitHub)
 
-1. Import the GitHub repo in Vercel. Framework preset: **Other**. Use the committed `vercel.json`: build command **`bun run build:vercel`**, output directory unset. The build validates core settings before compiling; `VERCEL=1` explicitly selects the Nitro Vercel preset. Lovable keeps its managed preview target. Verify `.vercel/output/config.json` in the Vercel build before promoting a release; a Vercel deployment has not been verified here.
+1. Import the GitHub repo in Vercel. Framework preset: **Other**. Use the committed `vercel.json`: build command **`bun run build:vercel`**, output directory unset. The build first runs `scripts/check-release-env.ts`, then `NITRO_PRESET=vercel vite build` selects the Nitro Vercel preset (Build Output API, `.vercel/output`). Security headers (HSTS, CSP with frame-ancestors, nosniff, Referrer-Policy, COOP/COEP on /secure) come only from `src/lib/security-headers.ts` at runtime; `vercel.json` deliberately adds none, because a second CSP or frame header would be intersected by browsers and break route-specific policies. Lovable keeps its managed preview target. Verify `.vercel/output/config.json` in the Vercel build before promoting a release; a Vercel deployment has not been verified here.
 2. Paste every variable from *Required on Vercel* below, plus the optional groups you use, in Vercel → Settings → Environment Variables (Production and Preview).
 3. Review pending `db/NNNN_*.sql` migrations separately. Never run owner-level migrations automatically in a Vercel build. Use the Neon gateway migration workflow or the Neon SQL editor after reviewing the exact statements; then run `bun run db:check` using gateway credentials (schema drift against `db/schema.snapshot.json`). Never apply these scripts to Lovable Cloud.
 4. Point each OAuth provider's callback to `<PUBLIC_ORIGIN>/api/auth/callback/<provider>` (using the normalized HTTPS origin).
-5. A daily scheduler must call `/api/public/cron/cleanup-assets` (this repository ships no `vercel.json`; add one or use any external scheduler). Configure **`CRON_SECRET`** in Vercel: Vercel sends it as a bearer token. `LOVABLE_CRON_SECRET` is the handler's fallback for other schedulers. Other queues, including outbound webhooks and audit checkpoints, need their own reviewed schedules; the daily cleanup does not deliver webhooks.
+5. A daily scheduler must call `/api/public/cron/cleanup-assets`; the committed `vercel.json` schedules it at 03:00 UTC (other hosts: any external scheduler). Configure **`CRON_SECRET`** in Vercel: Vercel sends it as a bearer token. `LOVABLE_CRON_SECRET` is the handler's fallback for other schedulers. Other queues, including outbound webhooks and audit checkpoints, need their own reviewed schedules; the daily cleanup does not deliver webhooks.
 
 `NODE_ENV` is set by Vercel; never set it yourself.
 
@@ -245,3 +245,35 @@ Reuses `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` and `PSP_ENCRYPTION_KEY`. Add
   registratie. Oorzaak: het bestand is na live-applicatie ooit herschreven.
   De drift wordt gerapporteerd maar nooit stil hersteld; de live staat blijft
   leidend en correcties lopen uitsluitend via nieuwe delta-bestanden.
+
+## Server keys read by code (added 2026-11-15)
+
+Every value below is server-only, never `VITE_`-prefixed, and must stay identical across deployments that share the Neon database (changing it makes existing data unreadable or links invalid). Missing keys fail closed: the feature refuses, nothing falls back to a weaker key.
+
+- `ROUT_VAULT_KEK` — Master KEK of the server vault (`src/lib/vault/server-kek.ts`): 64–512 characters `[A-Za-z0-9]`. Only wraps the server vault's RVE1 seed (AES-256-GCM, `vault_enclave.server_keys`); `vtk_`/`sdm_` tokens cannot be opened without it. Missing → `vault_kek_missing`. Never rotate without a reviewed re-wrap.
+- `ROUT_RECOVERY_FACTOR_SECRET` — Server guardian factor of recovery (`src/lib/recovery/server-factor.server.ts`): 64–512 characters `[A-Za-z0-9]`, HKDF per member. Opens exactly one recovery share, never two. Missing → `recovery_factor_secret_missing`; changing it invalidates every server share.
+- `ROUT_SUBJECT_MASTER_KEY` — OAuth subject vault (`src/lib/oauth/subject-vault.server.ts`), at least 32 characters. Missing → `subject_master_missing`.
+- `SUBSCRIBER_ENCRYPTION_KEY` — Encrypts newsletter subscriber addresses outside the database (`src/lib/subscribers/subscriber-crypto.server.ts`).
+- `QA_HMAC_SECRET` — Master for anonymous-question purpose keys (sender, abuse, rate-limit buckets; `src/lib/qa/privacy-keys.server.ts`).
+- `CARD_LIVENESS_SECRET` — ROUT Card live-code key, at least 32 characters (`src/lib/wallet/card-liveness.server.ts`).
+- `WALLET_ID_SECRET` — Wallet pass id derivation, at least 32 characters; without it no wallet card is issued.
+- `WALLET_ASSET_ORIGIN` — Optional `https://` origin for wallet pass images; defaults to the public site.
+- `POW_SECRET` — Proof-of-work challenge HMAC, at least 32 characters; falls back to `BETTER_AUTH_SECRET`.
+- `PUBLIC_REF_SECRET` — Opaque public profile references; without it none are issued or accepted.
+- `REVIEW_LINK_SECRET` — Signs review decision links, at least 32 characters.
+- `AUTH_SECRET` — Alias of `BETTER_AUTH_SECRET`.
+- `BLUESKY_ALLOWED_AUTH_SERVERS` — Optional comma-separated extra https origins for Bluesky sign-in.
+
+## Mail transport (added 2026-11-15)
+- `MAIL_PROVIDER` — `smtp` (default) or `brevo`.
+- `SMTP_HOST` (default `mail.infomaniak.com`), `SMTP_PORT` (default 465), `SMTP_USER_AUTH` / `SMTP_PASS_AUTH` (auth mailbox), `SMTP_USER_SYSTEM` / `SMTP_PASS_SYSTEM` (system mailbox).
+- `FALLBACK_MAIL_API_KEY`, `FALLBACK_MAIL_API_URL` — Optional Postmark-compatible fallback (default endpoint api.postmarkapp.com).
+- `ERROR_REPORT_EMAIL` — Recipient of automatic error reports; falls back to `ADMIN_EMAIL`, then the contact address.
+
+## Ghost Mode rewrite (sovereign AI, added 2026-11-15)
+- `SOVEREIGN_AI_API_KEY` with either `INFOMANIAK_AI_PRODUCT_ID` (Infomaniak AI Tools) or `SOVEREIGN_AI_BASE_URL` (any OpenAI-compatible https endpoint); optional `SOVEREIGN_AI_MODEL`, `SOVEREIGN_AI_FALLBACK_MODEL`. Not configured → the rewrite is unavailable; text is never logged.
+
+## Omni media worker (worker/, separate host)
+- `OMNI_DATABASE_URL`, `OMNI_APP_ORIGIN`, `OMNI_EVENTS_URL`, `OMNI_REALTIME_SECRET`, `OMNI_RENDER_HOSTS`, `CHROMIUM_PATH`, `HOST`, `PORT` — read only by the worker daemon (see `worker/README.md`), never by the web app.
+
+Storage names are exactly those in "File storage (Scaleway)" above (`SCALEWAY_DEFAULT_BUCKET`, `SCALEWAY_CLIENT_BUCKET`, `SCALEWAY_INTERNAL_BUCKET`); a variable named `SCALEWAY_BUCKET` is not read by any code. Without storage credentials `/@handle/prekey-bundle.json` answers 404 `not_available`.
