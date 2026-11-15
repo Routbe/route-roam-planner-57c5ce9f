@@ -27,5 +27,5 @@ describe("committed rout-zk engine", () => {
     const limits = /\(import "env" "memory" \(memory \(;\d+;\) (\d+) (\d+)\)\)/.exec(text);
     expect(limits?.slice(1).map(Number)).toEqual([ZK_ENGINE_PAGES, ZK_ENGINE_PAGES]);
     expect(ZK_ENGINE_PAGES).toBe(32);
-  });
+  }, { timeout: 20_000 }); // compiling the engine and loading wabt took ~5.9 s once under full-suite CPU load
 });
