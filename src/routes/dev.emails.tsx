@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { sendTestEmail, SAMPLE_DATA, type TestTemplate } from "@/lib/email-test.functions";
@@ -219,6 +219,8 @@ const title = "Auth-mail preview | ROUT";
 const description = "Preview van alle authenticatie-e-mails in ROUT-huisstijl met sample data.";
 
 export const Route = createFileRoute("/dev/emails")({
+  // Development preview only: production builds answer 404, like /dev/material-lab.
+  beforeLoad: () => { if (!import.meta.env.DEV) throw notFound(); },
   head: () => ({
     meta: [
       { title },

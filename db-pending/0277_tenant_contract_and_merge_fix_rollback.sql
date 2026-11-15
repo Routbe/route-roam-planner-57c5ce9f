@@ -1,4 +1,4 @@
--- Rollback of db-pending/0277_tenant_contract_and_merge_fix.sql: restores 0276. Idempotent.
+-- Rollback of db/0277_tenant_contract_and_merge_fix.sql (its header names the former file 0277_private_columns_contract_rollback.sql): restores 0276. Idempotent.
 -- Pending handle invites get the member's address back, so the 0276 rollback can run afterwards.
 
 grant select on public.profiles to rout_app;

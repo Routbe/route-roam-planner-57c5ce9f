@@ -7,7 +7,7 @@ vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
 vi.mock("@/lib/auth/middleware", () => ({ requireAuth: {} }));
 vi.mock("@/lib/storage/s3.server", () => ({ storageConfigured: mocks.configured, putObject: mocks.put }));
 vi.mock("@/lib/auth/step-up.server", () => ({ ensureStepUpProof: mocks.proof }));
-vi.mock("@/lib/pq/prekey-publish.server", () => ({ productionPublishDeps: async () => ({ rpId: "rout.be", origins: ["https://rout.be"] }) }));
+vi.mock("@/lib/pq/prekey-publish.server", () => ({ productionPublishDeps: async () => ({ rpId: "rout.be", origins: ["https://rout.be"] }), publishPrekey: vi.fn() }));
 vi.mock("@/lib/anon-booking/host-chain-store.server", () => ({ AnonHostChainStore: class { passkey = mocks.passkey; } }));
 vi.mock("@/lib/neon", () => ({ runQuery: vi.fn(), withDbContext: vi.fn() }));
 import { publishHardwareIdentity } from "@/lib/pq/hardware-publication.functions";
